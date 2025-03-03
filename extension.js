@@ -16,7 +16,7 @@ export default function(){
     character: {
         character: {
             "quack_visha": ["female", "empire", 4/4, ["ys_yancong","ys_shanzhan"],[ //维多利亚：帝国，4血，技能：严从，善战。 严从：其他角色使用杀或锦囊牌指定角色后，你可以弃置一张牌，视为对其中一名目标角色使用一张无视距离的【杀】。若此【杀】没有造成伤害，你受到一点伤害并获得目标角色区域内的一张牌。
-                "des:维多莉亚·伊娃诺娃·谢列布里亚科夫少尉，又称维夏。谭雅的副官。", //善战：当你使用或打出一张【杀】时，或受到1点伤害后，你可以摸一张牌。
+                "des:维多莉亚·伊娃诺娃·谢列布里亚科夫少尉，又称维夏。谭雅的副官。", //善战：当你使用或打出一张【杀】时，或受到伤害后，你可以摸一张牌。
                 "ext:鸭子扩展/image/character/quack_visha.jpg",
                 "die:ext:鸭子扩展/audio/die/quack_visha.mp3",
                 "forbidai"
@@ -50,6 +50,7 @@ export default function(){
                             event.card.name == 'sha'; //且是【杀】
                         },
                         content : async function(){
+                            console.log('严从造成伤害啦！') //测试用
                             player.storage.yancong = true;
                         },
                         sub: true,
@@ -67,6 +68,7 @@ export default function(){
                             player.countCards('he') > 0; //自己有牌来弃置
                         },
                         content: async function(event, player) {
+                            console.log('严从触发啦！') //测试用
                             let card = await player.chooseCard('he', '请选择一张牌弃置').forResult(); //选择一张牌弃置
                             if (card.bool){
                                 await player.discard(card.cards);
@@ -91,6 +93,7 @@ export default function(){
                         content: async function() {
                             if (this.trigger.parent.skill == 'ys_yancong'){ //如果是严从出的杀
                                 if (!player.storage.yancong){ //如果没有造成伤害
+                                    console.log('处理严从未造成伤害中！') //测试用
                                     await player.damage(1, 'nosource'); //受到一点无来源伤害
                                     await player.gainPlayerCard(this.trigger.target, 'hej', true); //获得目标角色区域内的一张牌
                                 }
@@ -102,18 +105,30 @@ export default function(){
                 }
             },
             "ys_shanzhan": {
+                usable: 1,
+                frequent: true,
                 trigger: {
-                    player: "useCardAfter", //使用卡牌后
+                    player: [ //当你
+                        'useCard', //使用卡牌
+                        'respond', //打出卡牌
+                        'damageEnd', //受到伤害后
+                    ]
                 },
                 filter: function(event, player) {
-                    return player.storage.ys_yancong && event.card
+                    return event.card.name == 'sha' || //使用或打出的是【杀】
+                    this.trigger.player == 'damageEnd'; //或者是受到伤害后
                 },
-                content: function() {
-                    player.draw();
+                content: async function() {
+                    console.log('善战触发啦！') //测试用
+                    await player.draw(1);
                 },
             },
         },
         translate: {
+            "ys_yancong": "严从",
+            "ys_yancong_info": "其他角色使用【杀】或锦囊牌指定角色后，你可以弃置一张牌，视为对其中一名目标角色使用一张无视距离的【杀】。若此【杀】没有造成伤害，你受到一点伤害并获得目标角色区域内的一张牌。",
+            "ys_shanzhan": "善战",
+            "ys_shanzhan_info": "当你使用或打出一张【杀】时，或受到伤害后，你可以摸一张牌。",
         },
     },
     intro: "",
