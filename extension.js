@@ -15,7 +15,7 @@ export default function(){
 },config:{},help:{},package:{
     character: {
         character: {
-            "quack_visha": ["female", "empire", 4/4, ["ys_yanfu","ys_shanzhan"],[ //维多利亚：帝国，4血，技能：严服，善战。 严服：其他角色使用杀或锦囊牌指定角色后，你可以弃置一张牌，视为对其中一名目标角色使用一张无视距离的【杀】。若此【杀】没有造成伤害，你受到一点伤害并获得目标角色区域内的一张牌。
+            "quack_visha": ["female", "empire", 4/4, ["ys_yancong","ys_shanzhan"],[ //维多利亚：帝国，4血，技能：严从，善战。 严从：其他角色使用杀或锦囊牌指定角色后，你可以弃置一张牌，视为对其中一名目标角色使用一张无视距离的【杀】。若此【杀】没有造成伤害，你受到一点伤害并获得目标角色区域内的一张牌。
                 "des:维多莉亚·伊娃诺娃·谢列布里亚科夫少尉，又称维夏。谭雅的副官。", //善战：当你使用或打出一张【杀】时，或受到1点伤害后，你可以摸一张牌。
                 "ext:鸭子扩展/image/character/quack_visha.jpg",
                 "die:ext:鸭子扩展/audio/die/quack_visha.mp3",
@@ -35,8 +35,8 @@ export default function(){
     },
     skill: {
         skill: {
-            "ys_yanfu": { //严服
-                group: ["ys_yanfu_expire", "ys_yanfu_chusha", "ys_yanfu_damage"], //三个部分，一个检查杀造成伤害，一个视为出杀，一个负责处理没造成伤害后
+            "ys_yancong": { //严从
+                group: ["ys_yancong_expire", "ys_yancong_chusha", "ys_yancong_damage"], //三个部分，一个检查杀造成伤害，一个视为出杀，一个负责处理没造成伤害后
                 subSkill:{
                     'expire':{
                         trigger:{
@@ -46,14 +46,14 @@ export default function(){
                         popup: false,
                         silent: true,
                         filter: function(event){
-                            return event.parent.skill == 'ys_yanfu_chusha' && //如果是严服造成的
+                            return event.parent.skill == 'ys_yancong_chusha' && //如果是严从造成的
                             event.card.name == 'sha'; //且是【杀】
                         },
                         content : async function(){
-                            player.storage.yanfu = true;
+                            player.storage.yancong = true;
                         },
                         sub: true,
-                        sourceSkill: 'ys_yanfu',
+                        sourceSkill: 'ys_yancong',
                     },
                     'chusha':{
                         trigger: {
@@ -80,7 +80,7 @@ export default function(){
                             }
                         },
                         sub: true,
-                        sourceSkill: 'ys_yanfu',
+                        sourceSkill: 'ys_yancong',
                     },
                     'damage':{
                         trigger: {
@@ -89,15 +89,15 @@ export default function(){
                         forced: true,
                         popup: false,
                         content: async function() {
-                            if (this.trigger.parent.skill == 'ys_yanfu'){ //如果是严服出的杀
-                                if (!player.storage.yanfu){ //如果没有造成伤害
+                            if (this.trigger.parent.skill == 'ys_yancong'){ //如果是严从出的杀
+                                if (!player.storage.yancong){ //如果没有造成伤害
                                     await player.damage(1, 'nosource'); //受到一点无来源伤害
                                     await player.gainPlayerCard(this.trigger.target, 'hej', true); //获得目标角色区域内的一张牌
                                 }
                             }
                         },
                         sub: true,
-                        sourceSkill: 'ys_yanfu',
+                        sourceSkill: 'ys_yancong',
                     },
                 }
             },
@@ -106,7 +106,7 @@ export default function(){
                     player: "useCardAfter", //使用卡牌后
                 },
                 filter: function(event, player) {
-                    return player.storage.ys_yanfu && event.card
+                    return player.storage.ys_yancong && event.card
                 },
                 content: function() {
                     player.draw();
