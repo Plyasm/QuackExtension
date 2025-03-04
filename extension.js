@@ -15,9 +15,9 @@ export default function(){
 },config:{},help:{},package:{
     character: {
         character: {
-            "quack_visha": ["female", "empire", "4/4", ["ys_yancong","ys_shanzhan"],[ //维多利亚：帝国，4血，技能：严从，善战。 严从：其他角色使用杀或锦囊牌结算完毕后，你可以弃置一张牌，视为对其中一名目标角色使用一张无视距离的【杀】。若此【杀】没有造成伤害，你受到一点伤害并获得目标角色区域内的一张牌。
-                "des:维多莉亚·伊娃诺娃·谢列布里亚科夫少尉，又称维夏。谭雅的副官。", //善战：当你使用或打出一张【杀】时，或受到伤害后，你可以摸一张牌。
-                "ext:鸭子扩展/image/character/quack_visha.jpg",
+            "quack_visha": ["female", "empire", "4/4", ["ys_yancong","ys_shanzhan", "ys_qiangshi"],[ //维多利亚：帝国，4血，技能：严从，善战。 严从：每回合限一次。其他角色使用杀或锦囊牌结算完毕后，你可以弃置一张牌，视为对其中一名目标角色使用一张无视距离的【杀】。若此【杀】没有造成伤害，你受到一点伤害并获得目标角色区域内的一张牌。
+                "des:维多莉亚·伊娃诺娃·谢列布里亚科夫少尉，又称维夏。谭雅的副官。", //善战：势力技，当你使用或打出一张【杀】时，或受到伤害后，你可以摸一张牌。
+                "ext:鸭子扩展/image/character/quack_visha.png", //强食：锁定技，当你回复体力时，此次回复的体力+1。
                 "die:ext:鸭子扩展/audio/die/quack_visha.mp3",
                 "forbidai"
             ]],
@@ -38,10 +38,11 @@ export default function(){
             "ys_yancong": { //严从
                 group: ["ys_yancong_chusha", "ys_yancong_damage"], //两个部分，一个视为出杀，一个负责处理没造成伤害后
                 subSkill:{
-                    'chusha':{ //代码参考[zuoding]佐定, [reqianxi]潜袭, [gongshen]工神, [nifu]匿伏, [heji]合击
+                    'chusha':{ //代码参考[zuoding]佐定, [reqianxi]潜袭, [gongshen]工神, [nifu]匿伏, [heji]合击, [junchi]骏驰
                         trigger: {
                             global: "useCardAfter", //有角色使用牌结算完毕后
                         },
+                        usable: 1, //每回合限一次
                         skillAnimation: 'true',
                         animationColor: 'grey',
                         prompt: '是否发动【严从】，弃置一张牌并视为对其中一名目标角色使用一张无视距离的【杀】？',
@@ -74,7 +75,6 @@ export default function(){
                             player: 'shaUnhirt', //使用杀并且未造成伤害时
                         },
                         forced: true,
-                        popup: false,
                         content: async function(event, trigger, player) {
                             //game.print('正在检查此杀') //测试用           (这里有很大的问题，检测是不是严从出的杀不对劲)
                             if (player.storage.chusha){ //如果是严从出的杀
@@ -116,12 +116,24 @@ export default function(){
                     await player.draw();
                 },
             },
+            "ys_qiangshi": {
+                charlotte: true,
+                trigger: {
+                    player: "recoverBegin", //当你回复体力时
+                },
+                forced: true,
+                content: async function(event, trigger, player) {
+                    trigger.baseDamage++; //此次回复的体力+1
+                },
+            },
         },
         translate: {
             "ys_yancong": "严从",
-            "ys_yancong_info": "其他角色使用【杀】或锦囊牌结算完毕后，你可以弃置一张牌，视为对其中一名目标角色使用一张无视距离的【杀】。若此【杀】没有造成伤害，你受到一点伤害并获得目标角色区域内的一张牌。",
+            "ys_yancong_info": "每回合限一次。其他角色使用【杀】或锦囊牌结算完毕后，你可以弃置一张牌，视为对其中一名目标角色使用一张无视距离的【杀】。若此【杀】没有造成伤害，你受到一点伤害并获得目标角色区域内的一张牌。",
             "ys_shanzhan": "善战",
-            "ys_shanzhan_info": "当你使用或打出一张【杀】时，或受到伤害后，你可以摸一张牌。",
+            "ys_shanzhan_info": "势力技，当你使用或打出一张【杀】时，或受到伤害后，你可以摸一张牌。",
+            "ys_qiangshi": "强食",
+            "ys_qiangshi_info": "锁定技，当你回复体力时，此次回复的体力+1。",
         },
     },
     intro: "",
