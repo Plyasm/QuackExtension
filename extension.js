@@ -49,12 +49,12 @@ export default function(){
                         skillAnimation: 'true',
                         prompt: '是否发动【严从】，弃置目标数张牌并视为对其中一名目标角色使用一张无视距离的【杀】？',
                         filter: function(event, player) {
+                            if (!player.storage.ys_yancong_count) player.storage.ys_yancong_count = []; //初始化已发动过技能记录
                             return event.player != player && //其他角色
                             (event.card.name == 'sha' || get.type(event.card) == 'trick') && //使用杀或锦囊牌
                             event.targets && //有目标
                             event.targets.length > 0 && //目标至少为一人
-                            event.targets.some(target => !target.isDead()) && //目标里有存活角色
-                            !(event.targets.includes(player) && event.targets.length == 1) && //目标中有自己的话，目标至少为两人
+                            event.targets.some(target => !target.isDead() && target.isIn() && target != player && !player.storage.ys_yancong_count.includes(target)) && //目标中有活着的其他角色且不是自己且没有发动过技能
                             player.countCards('he') >= event.targets.length; //自己有足够多的牌来弃置
                         },
                         content: async function(event, trigger, player) {
@@ -62,12 +62,13 @@ export default function(){
                             let targetamount = get.event().getTrigger().targets.length; //目标数
                             await player.chooseToDiscard(targetamount, 'he', '请弃置' + get.cnNumber(targetamount, true) + '张牌', true).forResult(); //选择一张牌弃置（强制）
                             let target = await player.chooseTarget(true, '请选择其中一名目标角色，视为对其使用一张无视距离的【杀】', function (card, player, target){ //选择目标（强制）
-                                return target != player && get.event().getTrigger().targets.includes(target) && target.isIn() && !(player.storage.ys_yancong_count); //只能选择目标角色中的一个，且不能是自己，且不能是已经发动过技能的角色
+                                return target != player && get.event().getTrigger().targets.includes(target) && target.isIn() && !(player.storage.ys_yancong_count.includes(target)); //只能选择目标角色中的一个，且不能是自己，且不能是已经发动过技能的角色
                             }).forResult(); //选择一名角色
                             if (target.bool){
                                 let skillTarget = target.targets[0];
                                 player.storage.chusha = true; //记录出杀
                                 await player.useCard({name: 'sha'}, skillTarget, false); //视为对角色使用一张无视距离的【杀】
+                                player.storage.ys_yancong_count.push(skillTarget); //记录已发动过技能的角色
                             }
                         },
                         sub: true,
@@ -98,19 +99,11 @@ export default function(){
                     'count':{
                         trigger: {
                             global: "phaseAfter", //回合结束后
-                            player: "ys_yancong_chushaContentAfter", //对一名角色发动严从后
                         },
                         priority: 10,
                         forced: true,
                         content: async function(event, trigger, player) {
-                            if (trigger.name == 'phase'){ //如果是回合结束后
-                                if (player.storage.ys_yancong_count) delete player.storage.ys_yancong_count; //清除已发动过技能记录
-                            }
-                            else if (trigger.name == 'ys_yancong_chushaContent'){ //如果是对一名角色发动严从后
-                                if (!player.storage.ys_yancong_count) player.storage.ys_yancong_count = []; //初始化已发动过技能记录
-                                player.storage.ys_yancong_count.push(trigger.target); //记录已发动过技能
-                                //game.print('记录已发动过技能的目标为' + get.translation(trigger.target)); //测试用
-                            }
+                            if (player.storage.ys_yancong_count) delete player.storage.ys_yancong_count; //清除已发动过技能记录
                         },
                         popup: false,
                         nopop: true,
@@ -231,6 +224,6 @@ export default function(){
     author: "Plyasm",
     diskURL: "https://github.com/Plyasm/quackextension",
     forumURL: "",
-    version: "0.1",
+    version: "0.1b",
 },files:{"character":[],"card":[],"skill":[],"audio":[]},connect:false} 
 };
