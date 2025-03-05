@@ -16,6 +16,7 @@ export default function(){
         color: '#000000',
     }
     game.addGroup('xihan', '西', '西汉', xihanConfig);
+    lib.namePrefix.set("代号杀", {showName: "代号杀", color: '#FF2800'});
 },config:{},help:{},package:{
     character: {
         character: {
@@ -76,7 +77,8 @@ export default function(){
         },
         translate: {
             "quack_visha": "维多莉亚",
-            "dhs_xiaohe": "萧何",
+            "dhs_xiaohe": "代号杀萧何",
+            "dhs_xiaohe_prefix": "代号杀"
         },
     },
     card: {
@@ -385,10 +387,10 @@ export default function(){
             "dhs_chengye_info": "回合结束时，你可以令一名其他角色立即进行一个只有出牌阶段的额外回合，且此阶段其使用牌时，其摸一张牌。"
         },
     },
-    intro: "一个闲鱼鸭子扩展，目前只有维多莉亚一个角色。以后会增加更多。",
+    intro: "一个闲鱼鸭子扩展，目前只有维多莉亚，和代号杀的萧何。以后会增加更多。",
     author: "Plyasm",
     diskURL: "https://github.com/Plyasm/quackextension",
     forumURL: "",
-    version: "0.1b",
+    version: "0.2",
 },files:{"character":[],"card":[],"skill":[],"audio":[]},connect:false} 
 };
