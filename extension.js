@@ -356,7 +356,7 @@ export default function(){
                     //return _status.event.skill == "dhs_baiye"
                 },
                 content: async function(event, trigger, player) {
-                    game.print("角色因为败也进入濒死状态啦！")
+                    //game.print("角色因为败也进入濒死状态啦！")
                     trigger.player.addTempSkill("dhs_baiye3", 'phaseEnd');
                     //trigger.getParent('dhs_baiye').dhs_baiye_dying = true;
                 },
