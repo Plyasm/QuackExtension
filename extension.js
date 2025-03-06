@@ -4,7 +4,48 @@ export default function(){
 	return {name:"鸭子扩展",arenaReady:function(){
     
 },content:function(config,pack){
-    
+/*     //千幻聆音武将换肤换音前提代码
+    if(!lib.qhlypkg) lib.qhlypkg=[];
+	lib.qhlypkg.push({
+		isExt:true,
+		filterCharacter:function(name){
+			return name.indexOf('quack_')==0 || name.indexOf('dsh_')==0;
+		},
+		prefix:'extension/鸭子扩展/image/character/',
+		skin:{
+			standard:'extension/鸭子扩展/skin/image/',
+    		origin:'extension/鸭子扩展/skin/yuanhua/',
+		},
+		audioOrigin:'extension/鸭子扩展/audio/',
+		audio:'extension/鸭子扩展/skin/audio/',
+	});
+    //阵亡配音
+	lib.skill._zhenwangpeiyin={
+		trigger:{
+			player:'dieBegin',
+		},
+		fixed:true,
+		forced:true,
+		unique:true,
+		popup:false,
+		lastDo:true,
+		charlotte:true,
+		superCharlotte:true,
+		filter:function(event,player){
+			return event.player.name.indexOf('quack_')==0 || event.player.name.indexOf('dsh_')==0;
+		},
+		content:function(){
+			game.playAudio('..','extension','鸭子扩展/audio/character',trigger.player.name);
+		},
+	}; */
+    lib.character.dieAudio = {
+        dhs_xiaohe: [
+            "ext:鸭子扩展/audio/die/dhs_xiaohe1.mp3",
+            "ext:鸭子扩展/audio/die/dhs_xiaohe2.mp3"
+        ]
+    };
+    lib.translate["#ext:鸭子扩展/audio/die/dhs_xiaohe1"] = "功未成，已作枯骨......";
+    lib.translate["#ext:鸭子扩展/audio/die/dhs_xiaohe2"] = "社稷安危，又待托付何人？";
 },prepare:function(){
     
 },precontent:function(){
@@ -71,13 +112,13 @@ export default function(){
            "dhs_xiaohe":["male", "xihan", "4/4", ["dhs_chengye", "dhs_baiye"],[
                 "des:代号杀萧何。",
                 "ext:鸭子扩展/image/character/dhs_xiaohe.jpg",
-                "die:ext:鸭子扩展/audio/die/dhs_xiaohe.mp3",
-                "forbidai"
+                "die:ext:鸭子扩展/audio/die/dhs_xiaohe.mp3"
             ]],
         },
         translate: {
             "quack_visha": "维多莉亚",
             "dhs_xiaohe": "代号杀萧何",
+            "#ext:鸭子扩展/audio/die/my_general:die": '功未成，已作枯骨......',
             "dhs_xiaohe_prefix": "代号杀"
         },
     },
@@ -265,25 +306,44 @@ export default function(){
                 },
             },
             "dhs_chengye": { //成也：回合结束时，你可以令一名其他角色立即进行一个出牌阶段，且此阶段其使用牌时，其摸一张牌。
+                audio: "ext:鸭子扩展/audio/skill:2",
                 trigger: {
                     player: "phaseEnd",
+                },
+                check: function(event, player){ //检查是否该发动技能
+                    if (game.players.length > 2){
+                        return 1;
+                    }else return -1;
                 },
                 content: async function(event, trigger, player) {
                     let target = await player.chooseTarget(true, '请选择一名其他角色，其立即进行一个出牌阶段，且此阶段使用牌后摸一张牌', function (card, player, target){
                         return target != player; //选择一名其他角色
+                    }).set("ai", target => {
+                        var player = _status.event.player,
+                        att = get.attitude(player, target);
+                        if (target.hasSkillTag("nogain")) return 0.01 * att;
+                        if (target.hasJudge("lebu")) att *= 1.25;
+                        if (target.countCards("h") > target.hp) att *= 1.10;
+                        if (get.attitude(player, target) > 3) {
+                            var basis = get.threaten(target) * att;
+                            if (target.countCards("h") < target.hp) return basis * 0.8;
+                            return basis;
+                        } else return 0;
                     }).forResult();
                     if (target.bool){
                         let skillTarget = target.targets[0];
-                        skillTarget.addTempSkill("dhs_chengye2", "phaseUseEnd") //让其获得用一张摸一张的暂时技能
+                        player.logSkill('dhs_chengye', skillTarget);
+                        skillTarget.addTempSkill("dhs_chengyedraw", "phaseUseEnd") //让其获得用一张摸一张的暂时技能
                         var next = skillTarget.insertPhase(); //其立即进行一个额外回合
                         next._noTurnOver = true; //
                         next.phaseList = ["phaseUse"]; //里面只有出牌阶段
                     }
                 },
             }, 
-            "dhs_chengye2":{ //用一张牌，摸一张牌
+            "dhs_chengyedraw":{ //用一张牌，摸一张牌
                 mark: true,
                 marktext: "成",
+                audio: "ext:鸭子扩展/audio/skill:2",
                 trigger: {
                     player: "useCard" //使用牌时
                 },
@@ -292,9 +352,14 @@ export default function(){
                     content: "使用牌时摸一张牌"
                 },
                 forced: true,
+                nopop: true,
+                popup: false,
                 content: async function(event, trigger, player){
+                    player.logSkill('dhs_chengyedraw');
                     await player.draw(); //摸一张牌
-                }
+                },
+                sub: true,
+                sourceSkill: 'dhs_chengye'
             },
             "dhs_baiye": { //参考张邈的[mouni]谋逆
                 //败也：限定技，其他角色出牌阶段结束时，若其在此阶段内使用过的牌数大于三张，你可以令一名除其以外的其他角色对其依次使用手牌中的所有【杀】，直到其进入濒死状态
@@ -302,10 +367,27 @@ export default function(){
                 trigger: {
                     global: "phaseUseEnd", //一名角色出牌阶段结束时
                 },
+                audio: "ext:鸭子扩展/audio/skill:2",
                 unique: true,
                 limited: true,
                 skillAnimation: true,
                 animationColor: 'fire',
+                check: function(event, player){ //检查是否该发动技能
+                    var enemy = _status.event.player,
+                    att = get.attitude(player, enemy);
+                    if (enemy.hasSkillTag("nodamage")) return -1; //如果对方免疫伤害不发动
+                    if (enemy.hasSkillTag("filterDamage")) att *= 0.5 //如果对方有减伤，不倾向于发动
+                    if (enemy.countCards("he") == 0) att *= 1.5; //如果对方没有装备和手牌，倾向于发动
+                    if (att < -1){ //如果是敌对关系，则进入进一步判断
+                        var basis = get.threaten(enemy) * att; //根据对方的威胁度判断
+                        if (enemy.countCards("h") >= 2  && enemy.mayHaveShan(player, "use", enemy.getCards("h", i => {return i.hasGaintag("sha_notshan");}))) basis *= 0.5; //如果对方有至少两张手牌且有可能有闪则不倾向于发动
+                        if (enemy.hp <= 2) basis *= 1.5; //如果对方残血则倾向于发动
+                        if (basis >= 10){
+                            return 1; //超过一定的数值，发动
+                        }
+                        else return -1; //没有达到标准，不发动
+                    } else return -1; //如果不是敌对关系，不发动
+                },
                 filter: function(event, player) {
                     return event.player.getHistory('useCard', function(evt){ //获取使用过的牌
                         var evtx = evt.getParent('phaseUse'); //获取使用牌的阶段,确保是在出牌阶段使用的牌
@@ -320,14 +402,31 @@ export default function(){
                     player.awakenSkill('dhs_baiye'); //标记已发动技能
                     let target = await player.chooseTarget(true, '请选择一名除前回合角色以外的其他角色，令其对当前回合角色依次使用手牌中的所有【杀】，直到其进入濒死状态', function (card, player, target){
                         return target != player && target != _status.currentPhase && target.isIn() && !target.isDead(); //选择一名除其以外的其他角色 且活着 在场上
-                    }).forResult();
+                        }).set("ai", target => {
+                            var victim = _status.event.player,
+                            att = get.attitude(player, target),
+                            targetatt = get.attitude(target, victim);
+                            if (targetatt > 1) att *= 1.2; //如果目标和受害者是队友则倾向于对他发动
+                            if (targetatt < -1) att *= 0.8; //尽量不与受害者敌对阵营发动
+                            if (att < -1){ //如果玩家与目标是敌人
+                                var basis = get.threaten(target) * att; //按照威胁度调整判断
+                                if  (target.countCards("h") < target.hp) basis *= 0.8; //如果目标牌比较少不倾向于选他
+                                if (target.mayHaveSha(player, "use", null, "count") >= 2) basis *= 1.2; //如果目标杀比较多倾向于选他
+                                return -basis;
+                            } else {
+                                var basis = get.threaten(target) * att;
+                                if  (target.countCards("h") < target.hp) basis *= 0.8;
+                                if (target.mayHaveSha(player, "use", null, "count") >= 2) basis *= 1.2;
+                                return basis*= 0.6; //不是与目标敌人的话就尽量不选他
+                            }
+                        }).forResult();
                     if (target.bool){
                         let victim = _status.currentPhase;
                         event.target = victim;
                         //event.player = murderer;
-                        player.logSkill('dhs_baiye', victim);
                         let murderer = target.targets[0];
-                        murderer.addSkill('dhs_baiye2'); //添加技能,检查濒死状态
+                        player.logSkill('dhs_baiye', murderer);
+                        murderer.addSkill('dhs_baiyedyingcheck'); //添加技能,检查濒死状态
                         let cards = murderer.getCards('h', 'sha'); //取技能发动对象所有杀
                         //let dhs_baiye_dying = false;
                         while (!victim.isDead() && (!victim.hasSkill("dhs_baiye3"))) { //只要目标没进入濒死
@@ -337,11 +436,11 @@ export default function(){
                             }
                             else break;
                         }
-                        murderer.removeSkill("dhs_baiye2")
+                        murderer.removeSkill("dhs_baiyedyingcheck")
                     }
                 },
             },
-            'dhs_baiye2': {
+            'dhs_baiyedyingcheck': {
                 trigger: {
                     global: "dying", //一名角色进入濒死状态时
                 },
@@ -359,7 +458,7 @@ export default function(){
                 },
                 content: async function(event, trigger, player) {
                     //game.print("角色因为败也进入濒死状态啦！")
-                    trigger.player.addTempSkill("dhs_baiye3", 'phaseEnd');
+                    trigger.player.addTempSkill("dhs_baiyedying", 'phaseEnd');
                     //trigger.getParent('dhs_baiye').dhs_baiye_dying = true;
                 },
                 popup: false,
@@ -367,7 +466,7 @@ export default function(){
                 sub: true,
                 sourceSkill: 'dhs_baiye',
             }, 
-            'dhs_baiye3': {
+            'dhs_baiyedying': {
                 sub:true,
                 popup: false,
                 nopop: true,
@@ -384,7 +483,15 @@ export default function(){
             "dhs_baiye": "败也",
             "dhs_baiye_info": "限定技，其他角色出牌阶段结束时，若其在此阶段内使用过的牌数大于三张，你可以令一名除其以外的其他角色对其依次使用手牌中的所有【杀】，直到其进入濒死状态。",
             "dhs_chengye": "成也",
-            "dhs_chengye_info": "回合结束时，你可以令一名其他角色立即进行一个只有出牌阶段的额外回合，且此阶段其使用牌时，其摸一张牌。"
+            "dhs_chengye_info": "回合结束时，你可以令一名其他角色立即进行一个只有出牌阶段的额外回合，且此阶段其使用牌时，其摸一张牌。",
+            "dhs_chengyedraw": "成也",
+            "dhs_chengyedraw_info": "当你使用牌时，摸一张牌。",
+            "#dhs_baiye1": "忧患生于所忽，祸起于细微。",
+            "#dhs_baiye2": "阻其图，夺其虑，乘其惧。",
+            "#dhs_chengye1": "有力者疾以助人，有道者劝以教人。",
+            "#dhs_chengye2": "君子成人之美。",
+            "#dhs_chengyedraw1": "至如信者，国士无双。",
+            "#dhs_chengyedraw2": "令民得入田，毋收稿为禽兽食。",
         },
     },
     intro: "一个闲鱼鸭子扩展，目前只有维多莉亚，和代号杀的萧何。以后会增加更多。",
