@@ -49,7 +49,7 @@ const skills = {
                     await player.chooseToDiscard(targetamount, 'he', '请弃置' + get.cnNumber(targetamount, true) + '张牌', true).forResult(); //选择一张牌弃置（强制）
                     let target = await player.chooseTarget(true, '请选择其中一名目标角色，视为对其使用一张无视距离的【杀】', function (card, player, target){ //选择目标（强制）
                         return target != player && get.event().getTrigger().targets.includes(target) && target.isIn() && !(player.storage.ys_yancong_count.includes(target)); //只能选择目标角色中的一个，且不能是自己，且不能是已经发动过技能的角色
-                    }).set("ai", target => {      //bookmark: not done
+                    }).set("ai", target => {
                         var att = get.attitude(player, target);
                         //game.print("维夏对" + target.name + "态度为： " + att.toString());
                         if (target.mayHaveShan(player, "use", i => {return i.hasGaintag("sha_notshan");}) && target.hasJudge("lebu") && att > 1 && !(player.hp <= 2 && player.countCards("h", "tao") == 0)){ //如果是队友且估计有闪且被乐了且自己卖的了这个血
@@ -497,14 +497,100 @@ const skills = {
     //     }
     // },
     'dhs_feishengtaixu': {// 飞升太虚：游戏开始或回合开始时，你依次亮出牌顶的两张牌，你的体力值与手牌上限变为牌的点数。
-        trigger : {
-            player: ['enterGame', 'phaseBegin'],
+        audio: "ext:鸭子扩展/audio/skill:2",
+        trigger : { //参考[gwchuanxin]穿心, [zaiqixx]再起, [jsrgshacheng]沙城
+            player: 'phaseBegin',
+        },
+        charlotte: true,
+        forced: true,
+        group: "dhs_feishengtaixu_start",
+        content: async function(event, trigger, player){
+            event.cards = get.cards(2);
+            await game.cardsGotoOrdering(event.cards);
+            await player.showCards(event.cards[0], "【飞升太虚】");
+            //event.cards[0].number.toString()
+            var difference = player.maxHp - event.cards[0].number;
+            var differencecurrent = player.hp - event.cards[0].number;
+            if (differencecurrent > 0){
+                await player.loseMaxHp(difference);
+            }
+            else {
+                if (difference < 0){
+                    await player.gainMaxHp(-difference);
+                    await player.recover(-differencecurrent);
+                }
+                else{
+                    await player.loseMaxHp(difference);
+                    await player.recover(-differencecurrent);
+                }
+            }
+            await player.showCards(event.cards[1], "【飞升太虚】");
+            player.removeSkill("dhs_feishengtaixu2");
+            player.storage.dhs_feishengtaixu = event.cards[1].number;
+            player.addSkill("dhs_feishengtaixu2");
+        },
+        subSkill: {
+            start: {
+                audio: ["dhs_feishengtaixu", 2],
+                trigger: {
+                    global: "phaseBefore",
+                    player: "enterGame",
+                },
+                forced: true,
+                locked: false,
+                filter: function(event, player){
+                    return event.name != "phase" || game.phaseNumber == 0;
+                },
+                content: async function(event, trigger, player){
+                    var cards = get.cards(2);
+                    await game.cardsGotoOrdering(cards);
+                    await player.showCards(cards[0], "【飞升太虚】");
+                    var difference = player.maxHp - cards[0].number;
+                    var differencecurrent = player.hp - cards[0].number;
+                    if (differencecurrent > 0){
+                        await player.loseMaxHp(difference);
+                    }
+                    else {
+                        if (difference < 0){
+                            await player.gainMaxHp(-difference);
+                            await player.recover(-differencecurrent);
+                        }
+                        else{
+                            await player.loseMaxHp(difference);
+                            await player.recover(-differencecurrent);
+                        }
+                    }
+                    await player.showCards(cards[1], "【飞升太虚】");
+                    player.removeSkill("dhs_feishengtaixu2");
+                    player.storage.dhs_feishengtaixu = cards[1].number;
+                    player.addSkill("dhs_feishengtaixu2");
+                },
+                sub: true,
+                sourceSkill: "dhs_feishengtaixu",
+                priority: 0,
+            }
+        }
+    },
+    'dhs_feishengtaixu2': {
+        mark: true,
+        marktext: "虚",
+        intro: {
+            name: "飞升太虚",
+            content: "手牌上限已更改"
         },
         forced: true,
-        content: async function(event, trigger, player){
-            var card1 = get.cards(2, false)[0]
-        }
-    }
+        firstDo: true,
+        mod: {
+            maxHandcard: function(player, num) {
+                return player.storage.dhs_feishengtaixu;
+            },
+        },
+        filter: function(event, player){
+            return player.countCards("h") > player.hp || player.maxHandcardBase < player.maxHp;
+        },
+        content: async function(event, trigger, player){},
+        priority: 0,
+    },
 };
 
 export default skills;

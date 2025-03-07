@@ -5,7 +5,7 @@ game.import("extension", function(){
     return {
         name: "鸭子扩展",
         content: function(){
-            lib.skill._zhenwangpeiyin={
+            lib.skill._zhenwangpeiyin={ //阵亡配音系统
                 trigger:{
                     player:'dieBegin',
                 },
@@ -23,7 +23,7 @@ game.import("extension", function(){
                     if (event.player.name.indexOf('quack_')==0){
                         game.playAudio('..','extension','鸭子扩展/audio/die',trigger.player.name);
                     }
-                    else if (event.player.name.indexOf('dhs_')==0){
+                    else if (event.player.name.indexOf('dhs_')==0){ //代号杀角色有两个阵亡配音
                         game.playAudio('..','extension','鸭子扩展/audio/die',trigger.player.name + [1,2].randomGet().toString());
                     }
                 },
@@ -53,6 +53,10 @@ game.import("extension", function(){
                     "dhs_xiaohe_prefix": "代号杀",
                     "#ext:鸭子扩展/audio/die/dhs_xiaohe1:die": "功未成，已作枯骨......",
                     "#ext:鸭子扩展/audio/die/dhs_xiaohe2:die": "社稷安危，又待托付何人？",
+                    "dhs_zuoci": "代号杀左慈",
+                    "dhs_zuoci_prefix": "代号杀",
+                    "#ext:鸭子扩展/audio/die/dhs_zuoci1:die": "生也死之徒，死也生之始。",
+                    "#ext:鸭子扩展/audio/die/dhs_zuoci2:die": "大道既成！"
                 }
             },
             skill: { // 技能系统
@@ -76,6 +80,10 @@ game.import("extension", function(){
                     "#dhs_chengye2": "君子成人之美。",
                     "#dhs_chengyedraw1": "至如信者，国士无双。",
                     "#dhs_chengyedraw2": "令民得入田，毋收稿为禽兽食。",
+                    "dhs_feishengtaixu": "飞升太虚",
+                    "dhs_feishengtaixu_info": "锁定技：游戏开始或回合开始时，你依次亮出牌顶的两张牌，你的体力值与手牌上限依次变为亮出的点数。",
+                    "#dhs_feishengtaixu1": "太虚寥廓，肇基化元，万物资始，五运终天。",
+                    "#dhs_feishengtaixu2": "游鸾凭泰虚，腾鳞托浮宵。"
                 }
             },
             card: { // 卡牌系统
@@ -89,7 +97,7 @@ game.import("extension", function(){
             author: "Plyasm",
             diskURL: "https://github.com/Plyasm/quackextension",
             forumURL: "",
-            version: "0.2dAI",
+            version: "0.3a",
         },
         files: {
             "character": [],
