@@ -181,10 +181,10 @@ const skills = {
                 trigger: {
                     global: "phaseEnd", //一名角色的回合结束时
                 },
-                round: 1, //每轮限一次
                 forced: true,
                 skillAnimation: true,
                 filter: function(event, player) {
+                    if (player.hasSkill("ys_qiangshi_round")) return false; //本轮没法动过强食
                     if (!(player.storage.qiangshi >= player.hp)) return false; //本回合弃置的牌数不少于你的体力值
                     for (var i = 0; i < ui.discardPile.childElementCount; i++){ //遍历弃牌堆,检查是否有【桃】
                         if (ui.discardPile.childNodes[i].name == 'tao') return true; //弃牌堆里有【桃】
@@ -192,7 +192,7 @@ const skills = {
                     return false; //弃牌堆里没有【桃】
                 },
                 content: async function(event, trigger, player) {
-                    await player.addTempSkill('ys_qiangshi_round', "roundStart"); //标记本轮已发动【强食】
+                    await player.addSkill('ys_qiangshi_round'); //标记本轮已发动【强食】
                     let tao = get.discardPile(function(card){return card.name == 'tao'}, 'random'); //从弃牌堆中随机获得一张【桃】
                     await player.gain(tao, 'gain2'); //获得这张【桃】
                 },
@@ -232,7 +232,13 @@ const skills = {
                     name: '强食',
                     content: '本轮已发动【强食】',
                 },
-                onremove: true,
+                trigger: {
+                    global: "roundStart",
+                },
+                content: async function(event, trigger, player){
+                    await player.removeSkill("ys_qiangshi_round");
+                },
+                forced: true,
                 popup: false,
                 nopop: true,
                 sub: true,
@@ -427,12 +433,10 @@ const skills = {
         sourceSkill: 'dhs_baiye',
     },
     //代号杀左慈
-    // 'dhs_zhibeixicao': {//掷杯戏曹：你使用牌指定其他角色为唯一目标时，可以额外指定1个虚假目标，该目标可以响应此牌（无效果）。
-    //     sub:true,
-    //     popup: false,
-    //     nopop: true,
-    //     sourceSkill: 'dhs_baiye',
-    // },
+    'dhs_zhibeixicao': {//掷杯戏曹：你使用牌指定其他角色为唯一目标时，可以额外指定1个虚假目标，该目标可以响应此牌（无效果）。
+        //参考[olchenglie_effect]骋烈
+
+    },
     // 'dhs_dunjiatianshu': {// 遁甲天书：你的回合开始前，你从三名随机武将中选择一名，你获得其所有技能直到你的下回合开始。
     //     init: init(player) {
     //         if (!player.storage.huashen) {
