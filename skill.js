@@ -277,7 +277,8 @@ const skills = {
             }).forResult();
             if (target.bool){
                 let skillTarget = target.targets[0];
-                player.logSkill('dhs_chengye', skillTarget);
+                player.line(skillTarget, 'red');
+                game.log(player, '对', skillTarget, "发动了",  "【" + get.translation("dhs_chengye") + "】");
                 skillTarget.addTempSkill("dhs_chengyedraw", "phaseUseEnd"); //让其获得用一张摸一张的暂时技能
                 var next = skillTarget.insertPhase(); //其立即进行一个额外回合
                 next._noTurnOver = true; //
@@ -293,6 +294,7 @@ const skills = {
                 return 5;
             },
         },
+        derivation: 'dhs_chengyedraw',
     }, 
     "dhs_chengyedraw":{ //用一张牌，摸一张牌
         mark: true,
@@ -383,7 +385,8 @@ const skills = {
                 event.target = victim;
                 //event.player = murderer;
                 let murderer = target.targets[0];
-                player.logSkill('dhs_baiye', murderer);
+                player.line(murderer, 'red');
+                game.log(player, '对', murderer, "发动了", "【" + get.translation("dhs_baiye") + "】");
                 murderer.addSkill('dhs_baiyedyingcheck'); //添加技能,检查濒死状态
                 //let dhs_baiye_dying = false;
                 while (!victim.isDead() && (!victim.hasSkill("dhs_baiyedying"))) { //只要目标没进入濒死
@@ -740,7 +743,8 @@ const skills = {
             })
             .forResult();
             if (result.bool){
-                player.logSkill('dhs_xiaoyaozhiti', result.targets[0]);
+                player.line(result.targets[0], 'red');
+                game.log(player, '对', result.targets[0], "发动了", "【" + get.translation("dhs_xiaoyaozhiti") + "】");
                 await player.gainPlayerCard(1, 'h', result.targets[0]);
                 await game.delay();
                 result.targets[0].addTempSkill("dhs_xiaoyaozhitinowuxie", "phaseAfter");
@@ -756,6 +760,7 @@ const skills = {
             },
         },
         priority: 2,
+        derivation: "dhs_xiaoyaozhitinowuxie",
     },
     "dhs_xiaoyaozhitinowuxie": {
         audio: "ext:鸭子扩展/audio/skill:2",
@@ -809,6 +814,7 @@ const skills = {
         },
         filter: function (event, player){return true;},
         content: async function (event, trigger, player){
+            player.storage.dhs_bailangchihui = [];
             let result = await player.chooseTarget(true, "选择一名角色，令其获得【🐺白狼】标记")
             .set('ai', target => {
                 var att = get.attitude(player, target);
@@ -821,8 +827,10 @@ const skills = {
             })
             .forResult();
             if (result.bool){
-                player.logSkill('dhs_bailangchihui', result.targets[0]);
-                result.targets[0].addTempSkill("dhs_bailangchihuimark", { player : 'phaseBegin'});
+                player.line(result.targets[0], 'red');
+                game.log(player, '对', result.targets[0], "发动了", "【" + get.translation("dhs_bailangchihui") + "】");
+                result.targets[0].addSkill("dhs_bailangchihuimark");
+                player.storage.dhs_bailangchihui.push(result.targets[0]);
                 await game.delay();
             }
         },
@@ -831,12 +839,34 @@ const skills = {
             expose: 0.3,
         },
         priority: 1,
+        derivation: 'dhs_bailangchihuimark',
+        group: 'dhs_bailangchihui_expire',
+        subSkill: {
+            expire: {
+                forced: true,
+                nopop: true,
+                popup: false,
+                trigger: {
+                    player: ['phaseBefore', "dieBegin"],
+                },
+                filter: function (event, player){
+                    if (event.name == "die") return true;
+                    let target = player.storage.dhs_bailangchihui;
+                    if (target && !target[0].isDead() && target[0].isIn() && target[0].hasSkill("dhs_bailangchihuimark")) return true;
+                    return false;
+                },
+                content: async function (event, trigger, player){
+                    player.storage.dhs_bailangchihui[0].removeSkill("dhs_bailangchihuimark");
+                },
+                sub: true,
+                sourceSkill: "dhs_bailangchihui",
+            }
+        }
     },
     "dhs_bailangchihuimark": {
         audio: "ext:鸭子扩展/audio/skill:1",
         mark: true,
         marktext: "🐺",
-        preHidden: true,
         intro: {
             name: '白狼',
             content: "其他角色对你使用【杀】时摸一张牌",
@@ -865,6 +895,76 @@ const skills = {
             },
             neg: true,
         },
+    },
+    'dhs_wenhouwushuang': { //温侯无双：锁定技。①当你获得锦囊牌后，将其转化为两张【杀】。②你的【杀】不可闪避。
+        audio: "ext:鸭子扩展/audio/skill:2", //参考[mengye]梦,
+        charlotte: true,
+        forced: true,
+        trigger: {
+            player: "gainAfter",
+        },
+        filter: function (event, player){
+            return event.cards.some(card => get.type(card) == "trick" || get.type(card) == "delay");
+        },
+        changeToSha: function (card, index, array){
+            card.init([card.suit, card.number, "sha"]);
+        },
+        content: async function (event, trigger, player){
+            var cards = getCards("h", function (card){
+                return card.type == "trick" || card.type == "delay";
+            });
+            cards.forEach(dhs_wenhouwushuang.changeToSha);
+        },
+        group: 'dhs_wenhouwushuang_qiangming',
+        subSkill: {
+            qiangming: {//[hanbei]悍北
+                audio: "ext:鸭子扩展/audio/skill:2",
+                charlotte: true,
+                forced: true,
+                trigger: {
+                    player: "shaBegin",
+                },
+                content: async function (event, trigger, player){
+                    trigger.directHit = true;
+                },
+                sub: true,
+                sourceSkill: "dhs_wenhouwushuang",
+            },
+        },
+        ai: {
+            halfneg: true,
+            "directHit_ai": true,
+            skillTagFilter: function (player, tag, arg){
+                if (arg.card.name != 'sha') return false;
+            },
+        }
+    },
+    "dhs_langziyexin": {//狼子野心：当你使用【杀】造成伤害后，你可以令你攻击范围内的另外一名其他角色选择一项：1.交给你两张牌；2.你可以对其使用一张不计入出杀次数的【杀】。
+        trigger: {
+            source: "damageSource",
+        },
+        direct: true,
+        filter: function(event, player) {
+            if (event._notrigger.includes(event.player)) return false;
+            if (!game.hasPlayer(function (current){
+                return player.inRange(current) && current != player && current != trigger.player
+            })) return false;
+            return event.card && event.card.name == "sha";
+        },
+        content: async function (event, trigger, player){
+            let target = await player.chooseTarget("选择一名其他角色，令其交给你2张牌或你对其使用一张不计入出杀次数的【杀】", function (card, player, target){
+                return target != player && player.inRange(target) && target != trigger.player;
+            }).set("ai", target => {
+                return 1 - get.attitude(player, target);
+            }).forResult();
+            if (target.bool){
+                
+            }
+        },
+    },
+    "dhs_yuanmensheji":{//辕门射戟：限定技，当其他角色成为【杀】的目标时，你可以打出一张【杀】，令此【杀】无效。
+        //参考[vtbshanwu]闪舞，[zybishi]避世
+
     }
 };
 
