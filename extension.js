@@ -1,6 +1,8 @@
 import { lib, game, ui, get, ai, _status } from "../../noname.js";
 import characters from "./character.js";
 import skills from "./skill.js";
+//import characterReplaces from "./characterReplace.js";
+import { characterSort, characterSortTranslate } from "./sort.js";
 game.import("extension", function(){
     return {
         name: "鸭子扩展",
@@ -42,11 +44,16 @@ game.import("extension", function(){
             lib.namePrefix.set("代号杀", {showName: "代号杀", color: '#FF2800'});
             lib.groupnature.xihan = 'soil';
             //lib.character['dhs_xiaohe'].dieAudios = ["ext:鸭子扩展/audio/die/dhs_xiaohe1.mp3","ext:鸭子扩展/audio/die/dhs_xiaohe2.mp3"];
+            //lib.characterSort.鸭子扩展
         },
         config: {},
         package: {
             character: { // 角色系统
                 character: { ...characters },
+                characterSort: {
+                    鸭子扩展: characterSort,
+                },
+                //characterReplace: { ...characterReplaces },
                 translate: {
                     "quack_visha": "维多莉亚",
                     "dhs_xiaohe": "代号杀萧何",
@@ -56,7 +63,12 @@ game.import("extension", function(){
                     "dhs_zuoci": "代号杀左慈",
                     "dhs_zuoci_prefix": "代号杀",
                     "#ext:鸭子扩展/audio/die/dhs_zuoci1:die": "生也死之徒，死也生之始。",
-                    "#ext:鸭子扩展/audio/die/dhs_zuoci2:die": "大道既成！"
+                    "#ext:鸭子扩展/audio/die/dhs_zuoci2:die": "大道既成！",
+                    "dhs_zhangliao": "代号杀张辽",
+                    "dhs_zhangliao_prefix": "代号杀",
+                    "#ext:鸭子扩展/audio/die/dhs_zhangliao1:die": "死则死耳，何惧之有！",
+                    "#ext:鸭子扩展/audio/die/dhs_zhangliao2:die": "今虽就死，死得其所！",
+                    ...characterSortTranslate
                 }
             },
             skill: { // 技能系统
@@ -83,7 +95,26 @@ game.import("extension", function(){
                     "dhs_feishengtaixu": "飞升太虚",
                     "dhs_feishengtaixu_info": "锁定技：游戏开始或回合开始时，你依次亮出牌顶的两张牌，你的体力值与手牌上限依次变为亮出的点数。",
                     "#dhs_feishengtaixu1": "太虚寥廓，肇基化元，万物资始，五运终天。",
-                    "#dhs_feishengtaixu2": "游鸾凭泰虚，腾鳞托浮宵。"
+                    "#dhs_feishengtaixu2": "游鸾凭泰虚，腾鳞托浮宵。",
+                    "dhs_zhibeixicao": "掷杯戏曹",
+                    "dhs_zhibeixicao_info": "你使用牌指定其他角色为唯一目标时，可以额外指定一个虚假目标，该目标可以响应此牌（此牌对其无效果）。",
+                    "#dhs_zhibeixicao1": "吉凶见，故善否著。虚实荡，故万物缠。",
+                    "#dhs_zhibeixicao2": "等闲施设神仙术，点悟曹瞒不转头。",
+                    "dhs_xiaoyaozhiti": "逍遥止啼",
+                    "dhs_xiaoyaozhiti_info": "你的回合开始时，你可以获得一名其他角色的一张手牌，并令其本回合内无法使用无懈可击。",
+                    "dhs_bailangchihui": "白狼持麾",
+                    "dhs_bailangchihui_info": "你的回合开始时，你可以令一名角色获得【🐺白狼】标记直到你的下回合开始。当有角色对有【🐺白狼】标记的角色使用【杀】时，其摸一张牌。",
+                    "dhs_bailangchihuimark": "白狼",
+                    "dhs_bailangchihuimark_info": "其他角色对你使用【杀】时，其摸一张牌。",
+                    "dhs_xiaoyaozhitinowuxie": "止啼",
+                    "dhs_xiaoyaozhitinowuxie_info": "你无法使用无懈可击。",
+                    "#dhs_xiaoyaozhiti1": "江东十万，吾亦来去自如。",
+                    "#dhs_xiaoyaozhiti2": "铁骑踏江东，小儿岂敢啼？",
+                    "#dhs_xiaoyaozhitinowuxie1": "折其盛势，以安众心，然后可守也。",
+                    "#dhs_xiaoyaozhitinowuxie2": "处世不分轻重，非丈夫也。",
+                    "#dhs_bailangchihui1": "主公授麾，勇者得前耳！",
+                    "#dhs_bailangchihui2": "望麾而进，不闻令而擅前后左右者斩。",
+                    "#dhs_bailangchihuimark1": "出言不逊，何不杀之！"
                 }
             },
             card: { // 卡牌系统
@@ -97,7 +128,7 @@ game.import("extension", function(){
             author: "Plyasm",
             diskURL: "https://github.com/Plyasm/quackextension",
             forumURL: "",
-            version: "0.3a",
+            version: "0.3b",
         },
         files: {
             "character": [],

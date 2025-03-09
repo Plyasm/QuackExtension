@@ -278,7 +278,7 @@ const skills = {
             if (target.bool){
                 let skillTarget = target.targets[0];
                 player.logSkill('dhs_chengye', skillTarget);
-                skillTarget.addTempSkill("dhs_chengyedraw", "phaseUseEnd") //让其获得用一张摸一张的暂时技能
+                skillTarget.addTempSkill("dhs_chengyedraw", "phaseUseEnd"); //让其获得用一张摸一张的暂时技能
                 var next = skillTarget.insertPhase(); //其立即进行一个额外回合
                 next._noTurnOver = true; //
                 next.phaseList = ["phaseUse"]; //里面只有出牌阶段
@@ -287,7 +287,12 @@ const skills = {
         ai: {
             expose: 0.5,
             threaten: 3,
-        }
+        },
+        mod: {
+            maxHandcardBase: function(player, num) {
+                return 5;
+            },
+        },
     }, 
     "dhs_chengyedraw":{ //用一张牌，摸一张牌
         mark: true,
@@ -301,10 +306,7 @@ const skills = {
             content: "使用牌时摸一张牌"
         },
         forced: true,
-        nopop: true,
-        popup: false,
         content: async function(event, trigger, player){
-            player.logSkill('dhs_chengyedraw');
             await player.draw(); //摸一张牌
         },
         sub: true,
@@ -383,11 +385,10 @@ const skills = {
                 let murderer = target.targets[0];
                 player.logSkill('dhs_baiye', murderer);
                 murderer.addSkill('dhs_baiyedyingcheck'); //添加技能,检查濒死状态
-                let cards = murderer.getCards('h', 'sha'); //取技能发动对象所有杀
                 //let dhs_baiye_dying = false;
-                while (!victim.isDead() && (!victim.hasSkill("dhs_baiye3"))) { //只要目标没进入濒死
-                    if (cards.length){
-                        let card = cards.randomRemove(1)[0];
+                while (!victim.isDead() && (!victim.hasSkill("dhs_baiyedying"))) { //只要目标没进入濒死
+                    if (murderer.getCards("h", 'sha').length){
+                        let card = murderer.getCards('h', 'sha').randomRemove(1)[0];
                         await murderer.useCard(victim, false, card); //强迫技能发动对象对目标使用所有杀
                     }
                     else break;
@@ -433,9 +434,123 @@ const skills = {
         sourceSkill: 'dhs_baiye',
     },
     //代号杀左慈
-    'dhs_zhibeixicao': {//掷杯戏曹：你使用牌指定其他角色为唯一目标时，可以额外指定1个虚假目标，该目标可以响应此牌（无效果）。
+    'dhs_zhibeixicao': {//掷杯戏曹：你使用牌指定其他角色为唯一目标时，可以隐藏你的目标，并额外指定1个虚假目标。该目标可以响应此牌（此牌对其无效果）。
         //参考[olchenglie_effect]骋烈
+        //全部重写
+        // trigger: {
+        //     player: "useCardToPlayer", //使用牌指定角色时
+        // },
+        // direct: true, //不普通询问发不发动
+        // filter: function(event, player){ //指定其他角色为唯一目标时
+        //     if (event.target != player && event.targets && event.targets.length == 1){
+        //         return game.hasPlayer(function (current) {
+        //             return !event.targets.includes(current) && player.canUse(event.card, current); //必须有其他符合成为目标的角色
+        //         });
+        //     }
+        //     return false;
+        // },
+        // content: async function(event, trigger, player){
+        //     let target = await player.chooseTarget(get.prompt("dhs_zhibeixxicao"), "发动【掷杯戏曹】，为" + get.translation(trigger.card) + "多指定一个目标", (card, player, target) => {
+        //         var evt = _status.event.getTrigger();
+        //         return !evt.targets.includes(target) && player.canUse(evt.card, target);
+        //     })
+        //     .set('ai', target => {
+        //         var player = _status.event.player;
+        //         var evt = _status.event.getTrigger();
+        //         return get.effect(target, evt.card, player, player);
+        //     }).forResult();
+        //     if (target.bool){
+        //         trigger.targets.addArray(target.targets);
+        //         player.storage.dhs_zhibeixicao = target.targets;
+        //     }
+        // },
+        // subSkill: {//参考[twjuexing]绝行 [dulie]笃烈
+        //     effect: {
+        //         trigger: {
+        //             global: ["chooseToUseAfter", "chooseToRespondAfter"],
+        //         },
+        //         forced: true,
+        //         popup: false,
+        //         charlotte: true,
+        //         filter: function(event, player){
+        //             return event.getParent(2).name == "dhs_zhibeixicao" && player.storage.dhs_zhibeixicao && event.player == player.storage.dhs_zhibeixicao[0];
+        //         },
+        //         content: async function(event, trigger, player){
+        //             trigger.targets.remove(event.player);
+        //             trigger.getParent().triggeredTargets2.remove(event.player);
+        //             trigger.untrigger();
+        //         },
+        //         sub: true,
+        //         sourceSkill: "dhs_zhibeixicao",
+        //     }
+        // }
+        //
+        //参考[dcsbpingliao]平辽
+        trigger: {
+            player: "useCard",
+        },
+        filter: function(event, player){
+            if (event.target != player && event.targets && event.targets.length == 1){
+                return game.hasPlayer(function (current) {
+                    return !event.targets.includes(current) && player.canUse(event.card, current); //必须有其他符合成为目标的角色
+                });
+            }
+            return false;
+        },
+        logTarget: async function(event, player){
+            let target = await player.chooseTarget("是否发动【掷杯戏曹】，为" + get.translation(this.trigger.card) + "增加一个虚拟目标？", (card, player, target) => {
+                var evt = _status.event.getTrigger();
+                return !evt.targets.includes(target) && player.canUse(evt.card, target);
+            })
+            .set('ai', target => {
+                var player = _status.event.player;
+                var evt = _status.event.getTrigger();
+                return get.effect(target, evt.card, player, player);
+            }).forResult();
+            if (target.bool){
+                var mixedTarget = [];
+                mixedTarget.addArray(this.trigger.targets);
+                mixedTarget.addArray(target.targets);
+                player.storage.dhs_zhibeixicao_real = target.targets;
+                player.storage.dhs_zhibeixicao_all = mixedTarget;
+            }
+            return mixedTarget;
+        },
+        content: async function (event, trigger, player){
+            const targets = game.filterPlayer().sortBySeat();
+            const respondedTargets = [];
+            const prompt = `###是否使用或打出牌来响应或抵消${get.translation(player)}对你使用的牌?###${get.translation(player)}对你使用了一张不知真假的${get.translation(trigger.card)}。若你是虚假目标，此牌生效后对你无效果。`;
+            for (let target of targets){
+                if (player.storage.dhs_zhibeixicao_all.includes(target)){
+                    const result = await target.chooseToRespond(prompt, (card, player) => {
+                        //可能最优解就是每个卡牌都弄个if bookmark：没做完
+                        //如果真目标没响应，直接结算，不让响应牌本身
+                        //如果真目标响应了，细分（决斗单独）
+                        if (trigger.shaRequired()){
+                            return card == "sha" || card == "wuxie";
+                        }else if (trigger.shanRequired()){
+                            if (trigger.card != "sha"){
+                                return card == "shan";
+                            }else return card == "shan" || card == "wuxie";
+                        }else if (trigger.card = "sha"){
+                            
+                        }
+                        else return card == "wuxie";
+                    }).set("ai", card => {
 
+                    })
+                    .set("respondedTargets", respondedTargets)
+                    .forResult();
+                    if (result.bool){
+                        respondedTargets.push(target);
+                        await game.delay();
+                        if (trigger.targets.includes(target)) {
+                            target.respond();
+                        }
+                    }
+                }
+            }
+        }
     },
     // 'dhs_dunjiatianshu': {// 遁甲天书：你的回合开始前，你从三名随机武将中选择一名，你获得其所有技能直到你的下回合开始。
     //     init: init(player) {
@@ -529,9 +644,14 @@ const skills = {
                 }
             }
             await player.showCards(event.cards[1], "【飞升太虚】");
-            player.removeSkill("dhs_feishengtaixu2");
+            //player.removeSkill("dhs_feishengtaixu2");
             player.storage.dhs_feishengtaixu = event.cards[1].number;
-            player.addSkill("dhs_feishengtaixu2");
+            //player.addSkill("dhs_feishengtaixu2");
+        },
+        mod: {
+            maxHandcard: function(player, num) {
+                return player.storage.dhs_feishengtaixu;
+            },
         },
         subSkill: {
             start: {
@@ -565,36 +685,187 @@ const skills = {
                         }
                     }
                     await player.showCards(cards[1], "【飞升太虚】");
-                    player.removeSkill("dhs_feishengtaixu2");
+                    //player.removeSkill("dhs_feishengtaixu2");
                     player.storage.dhs_feishengtaixu = cards[1].number;
-                    player.addSkill("dhs_feishengtaixu2");
+                    //player.addSkill("dhs_feishengtaixu2");
                 },
                 sub: true,
                 sourceSkill: "dhs_feishengtaixu",
                 priority: 0,
+                mod: {
+                    maxHandcard: function(player, num) {
+                        return player.storage.dhs_feishengtaixu;
+                    },
+                },
             }
         }
     },
-    'dhs_feishengtaixu2': {
-        mark: true,
-        marktext: "虚",
-        intro: {
-            name: "飞升太虚",
-            content: "手牌上限已更改"
+    // 'dhs_feishengtaixu2': {
+    //     mark: true,
+    //     marktext: "虚",
+    //     intro: {
+    //         name: "飞升太虚",
+    //         content: "手牌上限已更改"
+    //     },
+    //     forced: true,
+    //     firstDo: true,
+    //     mod: {
+    //         maxHandcard: function(player, num) {
+    //             return player.storage.dhs_feishengtaixu;
+    //         },
+    //     },
+    //     filter: function(event, player){
+    //         return player.countCards("h") > player.hp || player.maxHandcardBase < player.maxHp;
+    //     },
+    //     content: async function(event, trigger, player){},
+    //     priority: 0,
+    // },
+    "dhs_xiaoyaozhiti": { //逍遥止啼：你的回合开始时，你可以获得一名其他角色的一张手牌，并令其本回合内无法使用无懈可击。
+        audio: "ext:鸭子扩展/audio/skill:2",
+        trigger :{
+            player: 'phaseBegin',
         },
-        forced: true,
-        firstDo: true,
+        filter: function (event, player){
+            return game.hasPlayer(function (current){
+                return current.countCards("h") > 0;
+            });
+        },
+        content: async function (event, trigger, player){
+            let result = await player.chooseTarget(true, "是否获得一名其他角色的一张手牌并令其本回合内无法使用无懈可击", function (card, player, target){
+                return target.countCards('h') > 0 && target != player;
+            })
+            .set('ai', target => {
+                const player = get.player();
+                return get.effect(target, { name: "shunshou_copy2" }, player, player);
+            })
+            .forResult();
+            if (result.bool){
+                player.logSkill('dhs_xiaoyaozhiti', result.targets[0]);
+                await player.gainPlayerCard(1, 'h', result.targets[0]);
+                await game.delay();
+                result.targets[0].addTempSkill("dhs_xiaoyaozhitinowuxie", "phaseAfter");
+            }
+        },
+        ai: {
+            threaten: 2.5,
+            expose: 0.3,
+        },
         mod: {
-            maxHandcard: function(player, num) {
-                return player.storage.dhs_feishengtaixu;
+            maxHandcardBase: function(player, num) {
+                return 3;
             },
         },
-        filter: function(event, player){
-            return player.countCards("h") > player.hp || player.maxHandcardBase < player.maxHp;
-        },
-        content: async function(event, trigger, player){},
-        priority: 0,
+        priority: 2,
     },
+    "dhs_xiaoyaozhitinowuxie": {
+        audio: "ext:鸭子扩展/audio/skill:2",
+        forced: true,
+        mod: {
+            wuxieJudgeEnabled: () => false,
+            wuxieEnabled: () => false,
+            cardEnabled: card => {
+                if (card.name == "wuxie") return false;
+            },
+            aiValue: (player, card, val) => {
+                if (card.name == "wuxie") return 0;
+                var num = get.number(card);
+                if (typeof get.strNumber(num, false) === "string") return val * 1.1;
+            },
+            aiUseful: (player, card, val) => {
+                if (card.name == "wuxie") return 0;
+                var num = get.number(card);
+                if (typeof get.strNumber(num, false) === "string") return val * 1.1;
+            },
+        },
+        trigger : {
+            global: "useCard"
+        },
+        filter: function (event, player){
+            return get.type(event.card) == 'trick';
+        },
+        content: async function (event, trigger, player){},
+        ai: {
+            playernowuxie: true,
+        },
+        mark: true,
+        marktext: '止啼',
+        intro: {
+            name: '逍遥止啼',
+            content: '本回合无法使用无懈可击',
+        },
+        sub: true,
+        sourceSkill: 'dhs_xiaoyaozhiti',
+    },
+    "dhs_bailangchihui": { //白狼持麾：你的回合开始时，你可以令一名角色获得【🐺白狼】标记直到你的下回合开始。当有角色对有【🐺白狼】标记的角色使用【杀】时，其摸一张牌。
+        audio: "ext:鸭子扩展/audio/skill:2",
+        trigger: {
+            player: "phaseBegin",
+        },
+        check: function (event, player){
+            if (game.hasPlayer( function (current){
+                return get.attitude(player, current) < -0.5
+            })) return true;
+            else return false;
+        },
+        filter: function (event, player){return true;},
+        content: async function (event, trigger, player){
+            let result = await player.chooseTarget(true, "选择一名角色，令其获得【🐺白狼】标记")
+            .set('ai', target => {
+                var att = get.attitude(player, target);
+                if (att > 1) return 0.01;
+                var basis = att * get.threaten(target);
+                if (basis < -1){
+                    return -basis;
+                }
+                else return att;
+            })
+            .forResult();
+            if (result.bool){
+                player.logSkill('dhs_bailangchihui', result.targets[0]);
+                result.targets[0].addTempSkill("dhs_bailangchihuimark", { player : 'phaseBegin'});
+                await game.delay();
+            }
+        },
+        ai: {
+            threaten: 1.5,
+            expose: 0.3,
+        },
+        priority: 1,
+    },
+    "dhs_bailangchihuimark": {
+        audio: "ext:鸭子扩展/audio/skill:1",
+        mark: true,
+        marktext: "🐺",
+        preHidden: true,
+        intro: {
+            name: '白狼',
+            content: "其他角色对你使用【杀】时摸一张牌",
+        },
+        sub: true,
+        sourceSkill: 'dhs_bailangchihui',
+        forced: true,
+        trigger: {
+            target: "useCardToTargeted",
+        },
+        filter: function (event, player){
+            return event.card.name == "sha";
+        },
+        content: async function (event, trigger, player){
+            await trigger.player.draw();
+        },
+        ai: {
+            effect: {
+                target(card, player, target){
+                    if (card.name == 'sha') return 1.5;
+                }
+            },
+            value(card, player){
+                if(card.name == "shan") return get.value(card) * 1.5;
+                return get.value(card);
+            },
+            neg: true,
+        },
+    }
 };
 
 export default skills;
