@@ -30,7 +30,103 @@ game.import("extension", function(){
                     }
                 },
             };
+            lib.skill._entrancepeiyin={ //登场配音系统
+                trigger:{
+                    player: "phaseBegin",
+                },
+                fixed:true,
+                forced:true,
+                unique:true,
+                popup:false,
+                lastDo:true,
+                charlotte:true,
+                superCharlotte:true,
+                filter:function(event,player){
+                    return (event.player.name.indexOf('quack_')==0 || event.player.name.indexOf('dhs_')==0) && player.phaseNumber == 1;
+                },
+                content:function(event, trigger, player){
+                    if (event.player.name.indexOf('quack_')==0){
+                        game.playAudio('..','extension','鸭子扩展/audio/entrance',trigger.player.name);
+                    }
+                    else if (event.player.name.indexOf('dhs_')==0){ //代号杀角色有两个登场语音
+                        game.playAudio('..','extension','鸭子扩展/audio/entrance',trigger.player.name + [1,2].randomGet().toString());
+                    }
+                },
+            };
+            lib.skill._jishapeiyin={ //击杀配音系统
+                trigger:{
+                    source: "dieAfter",
+                },
+                fixed:true,
+                forced:true,
+                unique:true,
+                popup:false,
+                lastDo:true,
+                charlotte:true,
+                superCharlotte:true,
+                filter:function(event,player){
+                    return (player.name.indexOf('quack_')==0 || player.name.indexOf('dhs_')==0);
+                },
+                content:function(event, trigger, player){
+                    if (player.name.indexOf('quack_')==0){
+                        game.playAudio('..','extension','鸭子扩展/audio/jisha',player.name);
+                    }
+                    else if (player.name.indexOf('dhs_')==0){ //代号杀角色有两个击杀语音
+                        game.playAudio('..','extension','鸭子扩展/audio/jisha',player.name + [1,2].randomGet().toString());
+                    }
+                },
+            };
         },
+        // content: function(){
+        //     lib.skill._entrancepeiyin={ //登场配音系统
+        //         trigger:{
+        //             player: "phaseBefore",
+        //         },
+        //         fixed:true,
+        //         forced:true,
+        //         unique:true,
+        //         popup:false,
+        //         lastDo:true,
+        //         charlotte:true,
+        //         superCharlotte:true,
+        //         filter:function(event,player){
+        //             return (event.player.name.indexOf('quack_')==0 || event.player.name.indexOf('dhs_')==0) && player.phaseNumber == 1;
+        //         },
+        //         content:function(event, trigger, player){
+        //             if (event.player.name.indexOf('quack_')==0){
+        //                 game.playAudio('..','extension','鸭子扩展/audio/entrance',trigger.player.name);
+        //             }
+        //             else if (event.player.name.indexOf('dhs_')==0){ //代号杀角色有两个登场语音
+        //                 game.playAudio('..','extension','鸭子扩展/audio/entrance',trigger.player.name + [1,2].randomGet().toString());
+        //             }
+        //         },
+        //     }
+        // },
+        // content: function(){
+        //     lib.skill._entrancepeiyin={ //击杀配音系统
+        //         trigger:{
+        //             source: "dieAfter",
+        //         },
+        //         fixed:true,
+        //         forced:true,
+        //         unique:true,
+        //         popup:false,
+        //         lastDo:true,
+        //         charlotte:true,
+        //         superCharlotte:true,
+        //         filter:function(event,player){
+        //             return (event.player.name.indexOf('quack_')==0 || event.player.name.indexOf('dhs_')==0) && player.phaseNumber == 1;
+        //         },
+        //         content:function(event, trigger, player){
+        //             if (event.player.name.indexOf('quack_')==0){
+        //                 game.playAudio('..','extension','鸭子扩展/audio/jisha',trigger.player.name);
+        //             }
+        //             else if (event.player.name.indexOf('dhs_')==0){ //代号杀角色有两个击杀语音
+        //                 game.playAudio('..','extension','鸭子扩展/audio/jisha',trigger.player.name + [1,2].randomGet().toString());
+        //             }
+        //         },
+        //     }
+        // },
         precontent: function(){
             let empireConfig = {
                 color: '#160D08',
@@ -68,6 +164,10 @@ game.import("extension", function(){
                     "dhs_zhangliao_prefix": "代号杀",
                     "#ext:鸭子扩展/audio/die/dhs_zhangliao1:die": "死则死耳，何惧之有！",
                     "#ext:鸭子扩展/audio/die/dhs_zhangliao2:die": "今虽就死，死得其所！",
+                    "dhs_lvbu": "代号杀吕布",
+                    "dhs_lvbu_prefix": "代号杀",
+                    "#ext:鸭子扩展/audio/die/dhs_lvbu1:die": "吾岂能败？到黄泉再战！",
+                    "#ext:鸭子扩展/audio/die/dhs_lvbu2:die": "大丈夫征战沙场，何惧一死？",
                     ...characterSortTranslate
                 }
             },
@@ -114,7 +214,23 @@ game.import("extension", function(){
                     "#dhs_xiaoyaozhitinowuxie2": "处世不分轻重，非丈夫也。",
                     "#dhs_bailangchihui1": "主公授麾，勇者得前耳！",
                     "#dhs_bailangchihui2": "望麾而进，不闻令而擅前后左右者斩。",
-                    "#dhs_bailangchihuimark1": "出言不逊，何不杀之！"
+                    "#dhs_bailangchihuimark1": "出言不逊，何不杀之！",
+                    "dhs_wenhouwushuang": "温侯无双",
+                    "dhs_wenhouwushuang_info": "锁定技。①当你获得锦囊牌后，将其转化为两张【杀】。②你的【杀】不可闪避。",
+                    "dhs_langziyexin": "狼子野心",
+                    "dhs_langziyexin_info": "当你使用【杀】造成伤害后，你可以令你攻击范围内的另一名其他角色交给你两张牌，否则你可以对其使用一张不计入出杀次数的【杀】。",
+                    "dhs_yuanmensheji": "辕门射戟",
+                    "dhs_yuanmensheji_info": "限定技，当其他角色成为【杀】的目标时，你可以打出一张【杀】，令此【杀】无效。",
+                    "#dhs_wenhouwushuang1": "四海之内，唯我温侯独步！",
+                    "#dhs_wenhouwushuang2": "山川草木，皆我兵刃。",
+                    "#dhs_wenhouwushuang_qiangming1": "量你区区小卒，也敢螳臂当车？",
+                    "#dhs_wenhouwushuang_qiangming2": "就凭尔等，也配与我一战？",
+                    "#dhs_langziyexin1": "汉家城池，诸人有份，偏尔合得？",
+                    "#dhs_langziyexin2": "向我俯首称臣，如何？",
+                    "#dhs_langziyexinsubmit1": "霸业雄心吾自求之，岂为虚伪忠义所挟？",
+                    "#dhs_langziyexinreject1": "十八路诸侯，吾视之为草芥。",
+                    "#dhs_yuanmensheji1": "布平生不好斗，惟好解斗。",
+                    "#dhs_yuanmensheji2": "吾箭既中，尔等即刻退兵！",
                 }
             },
             card: { // 卡牌系统
@@ -124,11 +240,11 @@ game.import("extension", function(){
                 },
                 list: [],
             },
-            intro: "一个闲鱼鸭子扩展，目前只有维多莉亚，和代号杀的萧何。以后会增加更多。",
+            intro: "一个闲鱼鸭子扩展，目前只有几个武将。以后会增加更多。",
             author: "Plyasm",
             diskURL: "https://github.com/Plyasm/quackextension",
             forumURL: "",
-            version: "0.3bFIX",
+            version: "0.3c",
         },
         files: {
             "character": [],

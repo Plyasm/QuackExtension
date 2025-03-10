@@ -529,6 +529,7 @@ const skills = {
                         //可能最优解就是每个卡牌都弄个if bookmark：没做完
                         //如果真目标没响应，直接结算，不让响应牌本身
                         //如果真目标响应了，细分（决斗单独）
+                        //记虚假目标，然后子技能，对他使用牌且其未响应的时候，无效牌
                         if (trigger.shaRequired()){
                             return card == "sha" || card == "wuxie";
                         }else if (trigger.shanRequired()){
@@ -906,16 +907,17 @@ const skills = {
         filter: function (event, player){
             return event.cards.some(card => get.type(card) == "trick" || get.type(card) == "delay");
         },
-        changeToSha: function (card, index, array){
-            card.init([card.suit, card.number, "sha"]);
-        },
         content: async function (event, trigger, player){
-            var cards = getCards("h", function (card){
-                return card.type == "trick" || card.type == "delay";
+            var cards = player.getCards("h", function (card){
+                return get.type(card) == "trick" || get.type(card) == "delay";
             });
-            cards.forEach(dhs_wenhouwushuang.changeToSha);
+            cards.forEach(function(card, index, theArray){
+                let newCard = card.init([card.suit, card.number, 'sha']);
+                theArray[index] = newCard;
+                player.gain(game.createCard("sha", newCard.suit, newCard.number));
+            });
         },
-        group: 'dhs_wenhouwushuang_qiangming',
+        group: ['dhs_wenhouwushuang_qiangming', 'dhs_wenhouwushuang_start'],
         subSkill: {
             qiangming: {//[hanbei]悍北
                 audio: "ext:鸭子扩展/audio/skill:2",
@@ -927,19 +929,53 @@ const skills = {
                 content: async function (event, trigger, player){
                     trigger.directHit = true;
                 },
+                ai: {
+                    "directHit_ai": true,
+                    skillTagFilter: function (player, tag, arg){
+                        if (arg.card.name != 'sha') return false;
+                    },
+                    threaten: 2,
+                },
+                mod: {
+                    maxHandcardBase: function(player, num) {
+                        return 2;
+                    },
+                },
                 sub: true,
                 sourceSkill: "dhs_wenhouwushuang",
+            },
+            start: {
+                audio: ["dhs_wenhouwushuang", 2],
+                trigger: {
+                    player: "enterGame",
+                },
+                forced: true,
+                locked: false,
+                filter: function(event, player){
+                    return event.name != "phase";
+                },
+                content: async function(event, trigger, player){
+                    var cards = player.getCards("h", function (card){
+                        return get.type(card) == "trick" || get.type(card) == "delay";
+                    });
+                    cards.forEach(function(card, index, theArray){
+                        let newCard = card.init([card.suit, card.number, 'sha']);
+                        theArray[index] = newCard;
+                        player.gain(game.createCard("sha", newCard.suit, newCard.number));
+                        
+                    });
+                },
+                sub: true,
+                sourceSkill: "dhs_wenhouwushuang",
+                priority: 0,
             },
         },
         ai: {
             halfneg: true,
-            "directHit_ai": true,
-            skillTagFilter: function (player, tag, arg){
-                if (arg.card.name != 'sha') return false;
-            },
         }
     },
     "dhs_langziyexin": {//狼子野心：当你使用【杀】造成伤害后，你可以令你攻击范围内的另外一名其他角色选择一项：1.交给你两张牌；2.你可以对其使用一张不计入出杀次数的【杀】。
+        audio: "ext:鸭子扩展/audio/skill:2",
         trigger: {
             source: "damageSource",
         },
@@ -947,24 +983,121 @@ const skills = {
         filter: function(event, player) {
             if (event._notrigger.includes(event.player)) return false;
             if (!game.hasPlayer(function (current){
-                return player.inRange(current) && current != player && current != trigger.player
+                return player.inRange(current) && current != player && current != event.player
             })) return false;
             return event.card && event.card.name == "sha";
         },
         content: async function (event, trigger, player){
-            let target = await player.chooseTarget("选择一名其他角色，令其交给你2张牌或你对其使用一张不计入出杀次数的【杀】", function (card, player, target){
+            let target = await player.chooseTarget("选择一名其他角色，令其交给你两张牌或你可对其使用一张不计入出杀次数的【杀】", function (card, player, target){
                 return target != player && player.inRange(target) && target != trigger.player;
             }).set("ai", target => {
                 return 1 - get.attitude(player, target);
             }).forResult();
             if (target.bool){
-                
+                //播语音，记录等
+                player.logSkill("dhs_langziyexin", target.targets[0]);
+                let skillTarget = target.targets[0];
+                let result = await skillTarget.chooseCard(2, "he", "交给" + get.translation(player) + "两张牌,否则" + get.translation(player) + "可以对你使用一张【杀】")
+                .set("ai", (card) => {
+                    return 5 - get.value(card);
+                })
+                .forResult();
+                if (result.bool) {
+                    //播语音（给牌）
+                    await game.delay();
+                    game.playAudio("..", "extension", "鸭子扩展/audio/skill", "dhs_langziyexinsubmit1");
+                    await skillTarget.give(result.cards, player);
+                }
+                else {
+                    if (player.countCards('h', 'sha') > 0){
+                        await game.delay();
+                        game.playAudio("..", "extension", "鸭子扩展/audio/skill", "dhs_langziyexinreject1");
+                        let usedSha = await player.chooseToUse(function (card, player, event) {
+                            if (get.name(card) != 'sha') return false;
+                            return lib.filter.filterCard.apply(this, arguments);
+                        }, "是否对" + get.translation(skillTarget) + "使用一张不计入出杀次数的【杀】？")
+                        .set("targetRequired", true)
+                        .set("complexSelect", true)
+                        .set("filterTarget", function (card, player, target){
+                            if (target != _status.event.sourcex && !ui.selected.targets.includes(_status.event.sourcex)) return false;
+                            return lib.filter.targetEnabled.apply(this, arguments);
+                        })
+                        .set("sourcex", skillTarget)
+                        .set("addCount", false)
+                        .forResult();
+                        //game.print(usedSha.bool);
+                    }
+                }
             }
+        },
+        ai: {
+            expose: 0.2,
+            threaten: 1,
         },
     },
     "dhs_yuanmensheji":{//辕门射戟：限定技，当其他角色成为【杀】的目标时，你可以打出一张【杀】，令此【杀】无效。
         //参考[vtbshanwu]闪舞，[zybishi]避世
-
+        audio: "ext:鸭子扩展/audio/skill:2",
+        unique: true,
+        limited: true,
+        skillAnimation: true,
+        animationColor: "fire",
+        direct: true,
+        trigger: {
+            global: 'useCardToTarget',
+        },
+        filter: function (event, player){
+            return (
+                event.card.name == "sha" &&
+                event.target != player &&
+                player.hasCard(card => {
+                    return get.name(card) == 'sha' || _status.connectMode;
+                }) &&
+                event.player != player
+            );
+        },
+        content: async function (event, trigger, player){
+            let prompt = "是否发动【辕门射戟】，打出一张【杀】，令此杀无效？";
+            let result = await player.chooseToRespond(prompt, (card, player) => {
+               return card.name == "sha";
+            }).set("ai", card => {
+                const player = get.player(),
+                event = get.event();
+                let targets = event.targets;
+                const source = event.getParent().player;
+                if (get.attitude(player, source) < -1){
+                    if (!targets.some(target => {
+                        get.attitude(player, target) > 1;
+                    })) return -1;
+                    else if (targets.some(target => {
+                        get.attitude(player, target) > 1 && target.hp <= 2;
+                    })) return 1;
+                    else if (targets.length > 1) return 1;
+                    else return -1;
+                }
+                else {
+                    return -1;
+                }
+            })
+            .forResult();
+            if (result.bool){
+                player.awakenSkill("dhs_yuanmensheji");
+                player.logSkill("dhs_yuanmensheji");
+                player.line(trigger.player, "green");
+                var evt = trigger.getParent();
+                evt.targets.length = 0;
+                evt.all_excluded = true;
+                game.log(evt.card, "被无效了");
+            }
+        },
+        ai: {
+            expose: 0.1,
+            effect: {
+                target(card, player, target){
+                    if(card.name == "sha") return 1.2;
+                }
+            },
+        }
     }
 };
 
