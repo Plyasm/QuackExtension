@@ -947,12 +947,13 @@ const skills = {
             start: {
                 audio: ["dhs_wenhouwushuang", 2],
                 trigger: {
+                    global: "phaseBefore",
                     player: "enterGame",
                 },
                 forced: true,
                 locked: false,
                 filter: function(event, player){
-                    return event.name != "phase";
+                    return event.name != "phase" || game.phaseNumber == 0;
                 },
                 content: async function(event, trigger, player){
                     var cards = player.getCards("h", function (card){
