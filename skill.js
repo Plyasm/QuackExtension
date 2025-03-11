@@ -1000,7 +1000,22 @@ const skills = {
                 let skillTarget = target.targets[0];
                 let result = await skillTarget.chooseCard(2, "he", "交给" + get.translation(player) + "两张牌,否则" + get.translation(player) + "可以对你使用一张【杀】")
                 .set("ai", (card) => {
-                    return 5 - get.value(card);
+                    if (skillTarget.hasSkillTag("nodamage")) return 0;
+                    if (skillTarget.hasSkillTag("noe") && get.type(card) == "equip") return 11;
+                    if (skillTarget.hp == 1 && player.mayHaveSha(skillTarget)) return 11 - get.value(card);
+                    if (skillTarget.hp > 2){
+                        if (skillTarget.hasSkillTag("maixie_defend") || skillTarget.hasSkillTag("maixie")) return 0;
+                        if (!player.mayHaveSha(skillTarget)){
+                            return 5 - get.value(card);
+                        }
+                        else return 7 - get.value(card);
+                    }
+                    else{
+                        if (!player.mayHaveSha(skillTarget)){
+                            return 7- get.value(card);
+                        }
+                        else return 10 - get.value(card);
+                    }
                 })
                 .forResult();
                 if (result.bool) {
