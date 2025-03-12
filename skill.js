@@ -1218,9 +1218,19 @@ const skills = {
         content: async function (event, trigger, player){
             player.awakenSkill("dhs_pofuchenzhou");
             const cards = player.getCards("he");
+            const lose_list = [];
+            player.$throw(cards);
+            lose_list.push([player, cards]);
+            await game
+            .loseAsync({
+                lose_list: lose_list,
+            })
+            .setContent("chooseToCompareLose");
+            await game.delay();
             await game.cardsGotoSpecial(cards);
             game.log(player, "将", cards, "移出了游戏");
             player.addSkill("dhs_pofuchenzhoubuff");
+            player.addMark('dhs_pofuchenzhoubuff', 1);
             player.draw(3);
         },
         ai: {
@@ -1244,17 +1254,17 @@ const skills = {
         sub: true,
         sourceSkill: "dhs_pofuchenzhou",
         content: async function (event, trigger, player){
-            trigger.num++;
+            trigger.num+= player.countMark('dhs_pofuchenzhoubuff');
         },
         mark: true,
         markimage: "extension/鸭子扩展/image/ui/dhs_pofuchenzhoubuff.png",
         intro: {
             name: "破釜沉舟",
-            content: "当你造成伤害时，此伤害+1。你出牌阶段使用【杀】的次数上限+1。",
+            content: "当你造成伤害时，此伤害+#。你出牌阶段使用【杀】的次数上限+#。",
         },
         mod: {
             cardUsable: function(card,player, num){
-                if (card.name == 'sha') return num + 1;
+                if (card.name == 'sha') return num + player.countMark('dhs_pofuchenzhoubuff');
             }
         },
         ai: {

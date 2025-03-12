@@ -252,7 +252,7 @@ game.import("extension", function(){
                     "#dhs_pofuchenzhoubuff1": "愿与汉王挑战，决雌雄!",
                     "dhs_bawang_count": '霸王',
                     "dhs_pofuchenzhoubuff": "破釜沉舟",
-                    "dhs_pofuchenzhoubuff_info": "当你造成伤害时，此伤害+1。你出牌阶段使用【杀】的次数上限+1。",
+                    "dhs_pofuchenzhoubuff_info": "当你造成伤害时，此伤害+X。你出牌阶段使用【杀】的次数上限+X。（X为你发动破釜沉舟的次数）",
                 }
             },
             card: { // 卡牌系统
@@ -266,7 +266,7 @@ game.import("extension", function(){
             author: "Plyasm",
             diskURL: "https://github.com/Plyasm/quackextension",
             forumURL: "",
-            version: "0.4FIX",
+            version: "0.4b",
         },
         files: {
             "character": [],
