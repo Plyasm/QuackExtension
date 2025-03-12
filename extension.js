@@ -139,6 +139,11 @@ game.import("extension", function(){
             game.addGroup('xihan', '西', '西汉', xihanConfig);
             lib.namePrefix.set("代号杀", {showName: "代号杀", color: '#FF2800'});
             lib.groupnature.xihan = 'soil';
+            let xichuConfig = {
+                color: "#0B6623",
+            }
+            game.addGroup("xichu", '楚', "西楚", xichuConfig);
+            lib.groupnature.xichu = 'wood';
             //lib.character['dhs_xiaohe'].dieAudios = ["ext:鸭子扩展/audio/die/dhs_xiaohe1.mp3","ext:鸭子扩展/audio/die/dhs_xiaohe2.mp3"];
             //lib.characterSort.鸭子扩展
         },
@@ -168,6 +173,10 @@ game.import("extension", function(){
                     "dhs_lvbu_prefix": "代号杀",
                     "#ext:鸭子扩展/audio/die/dhs_lvbu1:die": "吾岂能败？到黄泉再战！",
                     "#ext:鸭子扩展/audio/die/dhs_lvbu2:die": "大丈夫征战沙场，何惧一死？",
+                    "dhs_xiangyu": "代号杀项羽",
+                    "dhs_xiangyu_prefix": "代号杀",
+                    "#ext:鸭子扩展/audio/die/dhs_xiangyu1:die": "骓不逝兮可奈何！",
+                    "#ext:鸭子扩展/audio/die/dhs_xiangyu2:die": "天之亡我，我何渡为！",
                     ...characterSortTranslate
                 }
             },
@@ -203,7 +212,7 @@ game.import("extension", function(){
                     "dhs_xiaoyaozhiti": "逍遥止啼",
                     "dhs_xiaoyaozhiti_info": "你的回合开始时，你可以获得一名其他角色的一张手牌并令其不能使用无懈可击直到本回合结束。",
                     "dhs_bailangchihui": "白狼持麾",
-                    "dhs_bailangchihui_info": "你的回合开始时，你可以令一名角色获得〖🐺白狼〗标记直到你的下回合开始。当有角色对有〖🐺白狼〗标记的角色使用【杀】时，其摸一张牌。",
+                    "dhs_bailangchihui_info": "你的回合开始时，你可以令一名角色获得〖白狼〗标记直到你的下回合开始。当有角色对有〖白狼〗标记的角色使用【杀】时，其摸一张牌。",
                     "dhs_bailangchihuimark": "白狼",
                     "dhs_bailangchihuimark_info": "锁定技，其他角色对你使用【杀】时，其摸一张牌。",
                     "dhs_xiaoyaozhitinowuxie": "止啼",
@@ -231,6 +240,16 @@ game.import("extension", function(){
                     "#dhs_langziyexinreject1": "十八路诸侯，吾视之为草芥。",
                     "#dhs_yuanmensheji1": "布平生不好斗，惟好解斗。",
                     "#dhs_yuanmensheji2": "吾箭既中，尔等即刻退兵！",
+                    "dhs_bawang": "霸王",
+                    "dhs_bawang_info": "锁定技。①当你使用【决斗】时，或者当其他角色对你使用【决斗】时，此决斗的效果改为你对对方造成1点伤害。②当你累计造成了3次伤害时，你从游戏外获得一张【决斗】。",
+                    "dhs_pofuchenzhou": "破釜沉舟",
+                    "dhs_pofuchenzhou_info": "限定技，出牌阶段，你可以将你所有牌（至少一张）移出游戏，摸三张牌且你本局游戏内造成的伤害+1，出牌阶段使用【杀】的次数上限+1。",
+                    "#dhs_bawang1": "始皇又如何。彼可取而代也！",
+                    "#dhs_bawang2": "吾历七十余战，未尝败北。",
+                    "#dhs_pofuchenzhou1": "破釜沉舟，百二秦关终属楚。",
+                    "#dhs_pofuchenzhou2": "今以必死之心，求破敌之功。",
+                    "#dhs_bawang_count1": "将相宁无种，本无富和穷。",
+                    "#dhs_pofuchenzhoubuff1": "愿与汉王挑战，决雌雄!",
                 }
             },
             card: { // 卡牌系统
@@ -326,9 +345,17 @@ export default function(){
                 "die:ext:鸭子扩展/audio/die/quack_visha.mp3"
             ]],
             //"quack_tanya"         //谭雅：帝国，3血，技能：狙击，神佑，质神，善战。 狙击：锁定技。①出牌阶段开始时，你摸一张牌并将一张牌置于武将牌上，称为“弹”。②你使用【杀】时，若“弹”中有牌，你将一张“弹”置入弃牌堆。③你的武将牌上有“弹”时，你使用杀无距离限制。
-            // 神佑：限定技，出牌阶段，若你的“祈”标记数不小于X，你可以弃置所有“祈”标记，对一名其他角色造成2点伤害并且对与其距离为1的所有其他角色造成1点伤害（X为场上的）。
-            // 质神：当你于摸牌阶段外摸牌时，你可以获得1个“祈”标记。
+            // 神佑：自带防御被动buff。出牌阶段限一次，当神佑标记>X， 可以弃置所有标记并造成大范围伤害。
+            // 质神：当你于摸牌阶段外摸牌或造成伤害后，你获得1个“神佑”标记。出牌阶段限一次，你可以弃置X枚“神佑”标记，令X名其他角色获得【鼓舞】直到其下一个回合结束。
             // 善战：帝国势力技，当你使用或打出一张【杀】时，或受到伤害后，你可以摸一张牌。
+            // 鼓舞：当你对一名角色造成伤害时，你摸一张牌。
+
+            //"quack_mary"
+            //玛丽·苏，合州国，3/4血，技能，神佑，狂热，祈祷，资援。
+            // 神佑：自带防御被动buff。出牌阶段限一次，当神佑标记>X， 可以弃置所有标记并造成大范围伤害。
+            // 狂热：锁定技。当你受到伤害或使用伤害类牌后，你观看牌堆顶的X+1张牌，并获得其中的Y张牌。
+            // 祈祷：出牌阶段，你可以弃置所有手牌，然后摸弃置牌数量一半的牌（向下取整）并获得X个“神佑”标记。（X为本阶段你发动此技能的次数）
+            // 资援：合州国势力技，当你于摸牌阶段外获得牌时，你可以将其中的至少一张牌交给一名没有【资援】的角色并摸一张牌。
 
             //"dhs_zuoci"   //代号杀左慈：东汉，1血，技能：掷杯戏曹，遁甲天书，飞升太虚。 掷杯戏曹：你使用牌指定其他角色为唯一目标时，可以额外指定1个虚假目标，该目标可以响应此牌（无效果）。
             // 遁甲天书：你的回合开始前，你从三名随机武将中选择一名，你获得其所有技能知道你的下回合开始。

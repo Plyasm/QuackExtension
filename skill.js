@@ -312,7 +312,8 @@ const skills = {
             await player.draw(); //摸一张牌
         },
         sub: true,
-        sourceSkill: 'dhs_chengye'
+        sourceSkill: 'dhs_chengye',
+        priority: 6,
     },
     "dhs_baiye": { //参考张邈的[mouni]谋逆
         //败也：限定技，其他角色出牌阶段结束时，若其在此阶段内使用过的牌数大于三张，你可以令一名除其以外的其他角色对其依次使用手牌中的所有【杀】，直到其进入濒死状态
@@ -324,7 +325,7 @@ const skills = {
         unique: true,
         limited: true,
         skillAnimation: true,
-        animationColor: 'fire',
+        animationColor: "thunder",
         check: function(event, player){ //检查是否该发动技能
             var enemy = event.player,
             att = get.attitude(player, enemy);
@@ -731,7 +732,7 @@ const skills = {
         },
         filter: function (event, player){
             return game.hasPlayer(function (current){
-                return current.countCards("h") > 0;
+                return current.countCards("h") > 0 && current != player;
             });
         },
         content: async function (event, trigger, player){
@@ -857,7 +858,9 @@ const skills = {
                     return false;
                 },
                 content: async function (event, trigger, player){
-                    player.storage.dhs_bailangchihui[0].removeSkill("dhs_bailangchihuimark");
+                    if (player.storage.dhs_bailangchihui){
+                        player.storage.dhs_bailangchihui[0].removeSkill("dhs_bailangchihuimark");
+                    }
                 },
                 sub: true,
                 sourceSkill: "dhs_bailangchihui",
@@ -867,7 +870,7 @@ const skills = {
     "dhs_bailangchihuimark": {
         audio: "ext:鸭子扩展/audio/skill:1",
         mark: true,
-        marktext: "🐺",
+        markimage: "extension/鸭子扩展/image/ui/dhs_bailangchihuimark.png",
         intro: {
             name: '白狼',
             content: "其他角色对你使用【杀】时摸一张牌",
@@ -896,6 +899,7 @@ const skills = {
             },
             neg: true,
         },
+        priority: 5,
     },
     'dhs_wenhouwushuang': { //温侯无双：锁定技。①当你获得锦囊牌后，将其转化为两张【杀】。②你的【杀】不可闪避。
         audio: "ext:鸭子扩展/audio/skill:2", //参考[mengye]梦,
@@ -973,6 +977,10 @@ const skills = {
         },
         ai: {
             halfneg: true,
+            value (card, player){
+                if (get.type(card) == "equip" && (get.subtype(card) == "equip1") || get.subtype(card) == "equip4") return get.value(card) * 1.5;
+                return get.value(card);
+            },
         }
     },
     "dhs_langziyexin": {//狼子野心：当你使用【杀】造成伤害后，你可以令你攻击范围内的另外一名其他角色选择一项：1.交给你两张牌；2.你可以对其使用一张不计入出杀次数的【杀】。
@@ -1057,7 +1065,7 @@ const skills = {
         unique: true,
         limited: true,
         skillAnimation: true,
-        animationColor: "fire",
+        animationColor: "thunder",
         direct: true,
         trigger: {
             global: 'useCardToTarget',
@@ -1113,8 +1121,152 @@ const skills = {
                     if(card.name == "sha") return 1.2;
                 }
             },
-        }
-    }
+        },
+    },
+    "dhs_bawang": { //霸王：锁定技。①当你使用【决斗】时，或者当其他角色对你使用【决斗】时，此决斗的效果改为你对对方造成1点伤害。②当你累计造成了3次伤害时，你从游戏外获得一张【决斗】。
+        audio: "ext:鸭子扩展/audio/skill:2",
+        forced: true,
+        charlotte: true,
+        trigger: {
+            target: "useCardToTargeted",
+            player: "useCardToPlayered",
+        },
+        filter: function (event, player){
+            return event.card.name == "juedou";
+        },
+        content: async function (event, trigger, player){
+            if (trigger.targets.includes(player)) {
+                trigger.player.damage();
+                trigger.getParent().excluded.add(player);
+            }else {
+                for (const target of trigger.targets){
+                    target.damage();
+                }
+                trigger.excluded.addArray(trigger.targets);
+            }
+            await game.delay();
+            trigger.cancel();
+        },
+        mod: {
+            maxHandcardBase: function(player, num) {
+                return 3;
+            },
+        },
+        ai: {
+            threaten: 1.2,
+            effect: {
+                target(card, player, target){
+                    if(card.name == "juedou" && !(target.hasSkillTag("maixie") || target.hasSkillTag("maixie_defend"))) return 0;
+                },
+                player (card, player, target){
+                    if(card.name == 'juedou' && !(target.hasSkillTag("maixie") || target.hasSkillTag("maixie_defend"))) return [1, 1];
+                },
+            },
+            value(card, player){
+                if(card.name == 'juedou') return 7;
+            },
+        },
+        group: 'dhs_bawang_count',
+        subSkill: {
+            count: {
+                audio: "ext:鸭子扩展/audio/skill:1",
+                init: function (player, skill){
+                    player.storage.dhs_bawang_count = 0;
+                },
+                mark: true,
+                marktext: "霸王",
+                intro: {
+                    content: "已累计造成#次伤害",
+                },
+                trigger: {
+                    source: "damageBegin",
+                },
+                forced: true,
+                popup: false,
+                content: async function (event, trigger, player){
+                    if (player.storage.dhs_bawang_count < 2) {
+                        player.addMark("dhs_bawang_count");
+                    } else {
+                        let newCardSuit = ["spade", "club", "heart", "diamond"];
+                        let newCardNumber = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+                        player.gain(game.createCard("juedou", newCardSuit.randomGet(), newCardNumber.randomGet()));
+                        player.storage.dhs_bawang_count = 0;
+                        player.logSkill("dhs_bawang");
+                    }
+                    player.markSkill('dhs_bawang_count');
+                },
+                sub: true,
+                sourceSkill: "dhs_bawang",
+                ai: {
+                    gain: 0.3,
+                }
+            },
+        },
+    },
+    "dhs_pofuchenzhou": { //破釜沉舟：限定技，出牌阶段，你可以将你所有牌（至少一张）移出游戏，摸三张牌且你本局游戏内造成的伤害+1，出牌阶段使用【杀】的次数上限+1。
+        audio: "ext:鸭子扩展/audio/skill:2",
+        unique: true,
+        limited: true,
+        skillAnimation: true,
+        animationColor: "thunder",
+        enable: "phaseUse",
+        filter: function (event, player){
+            return player.countCards("he") > 0;
+        },
+        check(event, player) {
+            if (player.countCards("he") > 3) return false;
+            return true;
+        },
+        content: async function (event, trigger, player){
+            player.awakenSkill("dhs_pofuchenzhou");
+            const cards = player.getCards("he");
+            await game.cardsGotoSpecial(cards);
+            game.log(player, "将", cards, "移出了游戏");
+            player.addSkill("dhs_pofuchenzhoubuff");
+            player.draw(3);
+        },
+        ai: {
+            gain: 3,
+            result: {
+                player(player){
+                    if (player.countCards("he") < 3) return 2;
+                    return 1;
+                },
+            },
+        },
+        derivation: "dhs_pofuchenzhoubuff",
+    },
+    "dhs_pofuchenzhoubuff": {
+        audio: "ext:鸭子扩展/audio/skill:1",
+        trigger: {
+            source: "damageBegin1",
+        },
+        forced: true,
+        charlotte: true,
+        sourceSkill: "dhs_pofuchenzhoubuff",
+        content: async function (event, trigger, player){
+            trigger.num++;
+        },
+        mark: true,
+        markimage: "extension/鸭子扩展/image/ui/dhs_pofuchenzhoubuff.png",
+        intro: {
+            name: "破釜沉舟",
+            content: "当你造成伤害时，此伤害+1。你出牌阶段使用【杀】的次数上限+1",
+        },
+        mod: {
+            cardUsable: function(card,player, num){
+                if (card.name == 'sha') return num + 1;
+            }
+        },
+        ai: {
+            threaten: 2,
+            effect: {
+                player (card, player, target){
+                    if(get.tag(card, "damage")) return [1, 1];
+                },
+            },
+        },
+    },
 };
 
 export default skills;
