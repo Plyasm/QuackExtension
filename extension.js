@@ -250,6 +250,9 @@ game.import("extension", function(){
                     "#dhs_pofuchenzhou2": "今以必死之心，求破敌之功。",
                     "#dhs_bawang_count1": "将相宁无种，本无富和穷。",
                     "#dhs_pofuchenzhoubuff1": "愿与汉王挑战，决雌雄!",
+                    "dhs_bawang_count": '霸王',
+                    "dhs_pofuchenzhoubuff": "破釜沉舟",
+                    "dhs_pofuchenzhoubuff_info": "当你造成伤害时，此伤害+1。你出牌阶段使用【杀】的次数上限+1。",
                 }
             },
             card: { // 卡牌系统

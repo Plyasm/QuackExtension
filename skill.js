@@ -1174,7 +1174,7 @@ const skills = {
                     player.storage.dhs_bawang_count = 0;
                 },
                 mark: true,
-                marktext: "霸王",
+                marktext: "霸",
                 intro: {
                     content: "已累计造成#次伤害",
                 },
@@ -1182,7 +1182,6 @@ const skills = {
                     source: "damageBegin",
                 },
                 forced: true,
-                popup: false,
                 content: async function (event, trigger, player){
                     if (player.storage.dhs_bawang_count < 2) {
                         player.addMark("dhs_bawang_count");
@@ -1191,7 +1190,6 @@ const skills = {
                         let newCardNumber = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
                         player.gain(game.createCard("juedou", newCardSuit.randomGet(), newCardNumber.randomGet()));
                         player.storage.dhs_bawang_count = 0;
-                        player.logSkill("dhs_bawang");
                     }
                     player.markSkill('dhs_bawang_count');
                 },
@@ -1243,7 +1241,8 @@ const skills = {
         },
         forced: true,
         charlotte: true,
-        sourceSkill: "dhs_pofuchenzhoubuff",
+        sub: true,
+        sourceSkill: "dhs_pofuchenzhou",
         content: async function (event, trigger, player){
             trigger.num++;
         },
@@ -1251,7 +1250,7 @@ const skills = {
         markimage: "extension/鸭子扩展/image/ui/dhs_pofuchenzhoubuff.png",
         intro: {
             name: "破釜沉舟",
-            content: "当你造成伤害时，此伤害+1。你出牌阶段使用【杀】的次数上限+1",
+            content: "当你造成伤害时，此伤害+1。你出牌阶段使用【杀】的次数上限+1。",
         },
         mod: {
             cardUsable: function(card,player, num){
