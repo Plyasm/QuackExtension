@@ -1158,12 +1158,10 @@ const skills = {
                 target(card, player, target){
                     if(card.name == "juedou" && !(target.hasSkillTag("maixie") || target.hasSkillTag("maixie_defend"))) return 0;
                 },
-                player (card, player, target){
-                    if(card.name == 'juedou' && !(target.hasSkillTag("maixie") || target.hasSkillTag("maixie_defend"))) return [1, 1];
-                },
             },
             value(card, player){
                 if(card.name == 'juedou') return 7;
+                return get.value(card);
             },
         },
         group: 'dhs_bawang_count',
@@ -1188,16 +1186,13 @@ const skills = {
                     } else {
                         let newCardSuit = ["spade", "club", "heart", "diamond"];
                         let newCardNumber = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-                        player.gain(game.createCard("juedou", newCardSuit.randomGet(), newCardNumber.randomGet()));
+                        player.gain(game.createCard("juedou", newCardSuit.randomGet(), newCardNumber.randomGet()), 'gain2');
                         player.storage.dhs_bawang_count = 0;
                     }
                     player.markSkill('dhs_bawang_count');
                 },
                 sub: true,
                 sourceSkill: "dhs_bawang",
-                ai: {
-                    gain: 0.3,
-                }
             },
         },
     },
@@ -1211,8 +1206,8 @@ const skills = {
         filter: function (event, player){
             return player.countCards("he") > 0;
         },
-        check(event, player) {
-            if (player.countCards("he") > 3) return false;
+        check: function(event, player) {
+            if (player.countCards("he") > 3 && player.countCards('h') != 0) return 0;
             return true;
         },
         content: async function (event, trigger, player){
@@ -1234,13 +1229,20 @@ const skills = {
             player.draw(3);
         },
         ai: {
-            gain: 3,
+            effect: {
+                player (card, player, target){
+                    return 1.5;
+                },
+            },
             result: {
                 player(player){
-                    if (player.countCards("he") < 3) return 2;
+                    if (player.countCards("he") < 3) return 1.5;
                     return 1;
                 },
             },
+            order(item, player){
+                return 4;
+            }
         },
         derivation: "dhs_pofuchenzhoubuff",
     },
@@ -1269,9 +1271,473 @@ const skills = {
         },
         ai: {
             threaten: 2,
+        },
+    },
+    "dhs_hujvyingyang": { //虎踞鹰扬：锁定技，摸牌阶段，你额外摸X张牌（X为你已损失的体力值）。
+        audio: "ext:鸭子扩展/audio/skill:2",
+        forced: true,
+        charlotte: true,
+        trigger: {
+            player: 'phaseDrawBegin',
+        },
+        filter: function (event, player){
+            return player.hp < player.maxHp;
+        },
+        content: async function (event, trigger, player){
+            let lostHp = player.maxHp - player.hp;
+            trigger.num += lostHp;
+        },
+        mod: {
+            maxHandcardBase: function(player, num) {
+                return 3;
+            },
+        },
+        ai: {
+            threaten: 1.3,
+            tag: {
+                maixie: true,
+            }
+        }
+    },
+    "dhs_xiaobawang": { //小霸王：出牌阶段或弃牌阶段开始时，若你的手牌数为全场最多，你可以视为对一名其他角色使用一张【决斗】。
+        audio: "ext:鸭子扩展/audio/skill:2",
+        direct: true,
+        trigger: {
+            player: ['phaseUseBegin', 'phaseDiscardBegin'],
+        },
+        filter: function (event, player){
+            return player.isMaxHandcard();
+        },
+        check: function (event, player){
+            if (game.hasPlayer(function (current){
+                return get.attitude(player, current) < 0;
+            })) return true;
+            return false;
+        },
+        content: async function (event, trigger, player){
+            let target = await player.chooseTarget("是否视为对一名其他角色使用一张【决斗】？", function (card, player, target) {
+                return target != player;
+            }).set("ai", target => {
+                return 1 - get.attitude(player, target);
+            }).forResult();
+            if (target.bool){
+                let skillTarget = target.targets[0];
+                player.logSkill("dhs_xiaobawang", skillTarget);
+                await player.useCard({name: 'juedou'}, skillTarget);
+            }
+        },
+        ai: {
+            threaten: 2,
+            expose: 0.3,
             effect: {
                 player (card, player, target){
-                    if(get.tag(card, "damage")) return [1, 1];
+                    let highest = 0;
+                    for (var current of game.players){
+                        let cardAmount = current.countCards('h');
+                        if (cardAmount > highest){
+                            highest = cardAmount;
+                        }
+                    }
+                    if (player.countCards('h') < highest){
+                        if (player.hp >= 5){
+                            return [1, -3];
+                        }
+                        else if(player.hp >= 3){
+                            return [1, -2];
+                        }
+                        else if(player.hp >= 2){
+                            return [1, -1];
+                        }
+                    }
+                }
+            },
+        }
+
+    },
+    "dhs_xiaojiniangniang": { //枭姬娘娘：锁定技。①游戏开始时，你选择两个装备类别（可以是同一种）并获得相对应的额外装备栏。②当你使用装备牌后，你摸一张牌。③当你失去一张装备区内的牌后，你摸一张牌。
+        audio: "ext:鸭子扩展/audio/skill:2",
+        mod: {
+            maxHandcardBase: function(player, num) {
+                return 4;
+            },
+        },
+        forced: true,
+        charlotte: true,
+        trigger: {
+            //player: 'equipBegin',
+            player: "useCard",
+        },
+        filter: function(event, player) {
+            return get.type(event.card) == "equip";
+        },
+        content: async function (event, trigger, player){
+            // var hasTwoList = [false, false, false, false, false];
+            // for (var i = 0; i < hasTwoList.length; i++){
+            //     if (player.countEquipableSlot(i+1) > 1){
+            //         hasTwoList[i] = true;
+            //     }
+            // }
+            // var hasTwo = false;
+            // if(hasTwoList.some(value => value == true)) hasTwo = true;
+            // //game.print(hasTwo);
+            // if(!hasTwo){
+            //     for (var i = 1; i < 6; i++){
+            //         //game.print(get.subtype(trigger.card));
+            //         //game.print(`equip${i.toString()}`);
+            //         //game.print( player.countEmptySlot(i));
+            //         if (get.subtype(trigger.card) == `equip${i.toString()}` && player.countEmptySlot(i) == 0){
+            //             //game.print("没位置了");
+            //             player.expandEquip(i);
+            //         }
+            //     }
+            // }
+            // player
+            // .when("equipEnd")
+            // .then(() => {
+            //     player.draw();
+            // })
+            await player.draw();
+        },
+        ai: {
+            effect: {
+                target: function(card, player, target, current) {
+                    if (get.type(card) == "equip" && !get.cardtag(card, "gifts")) return [1, 3];
+                },
+            },
+        },
+        group: ['dhs_xiaojiniangniang_lose', 'dhs_xiaojiniangniang_start'],
+        subSkill: {
+            lose: {
+                audio: "ext:鸭子扩展/audio/skill:2",
+                trigger: {
+                    player: "loseAfter",
+                    global: ["equipAfter","addJudgeAfter","gainAfter","loseAsyncAfter","addToExpansionAfter"],
+                },
+                forced: true,
+                charlotte: true,
+                // init: function (player, skill){
+                //     player.storage.dhs_xiaojiniangniang = [];
+                // },
+                getIndex: function(event, player) {
+                    const evt = event.getl(player);
+                    if (evt && evt.player === player && evt.es){
+                        // player.storage.dhs_xiaojiniangniang = [];
+                        // evt.es.forEach(card => {
+                        //     const VEquip = evt.vcard_map.get(card);
+                        //     player.storage.dhs_xiaojiniangniang.add(VEquip);
+                        // });
+                        return evt.es.length;
+                    } 
+                    return false;
+                },
+                content: async function(event, trigger, player) {
+                    // var hasTwoList = [false, false, false, false, false];
+                    // for (var i = 0; i < hasTwoList.length; i++){
+                    //     if (player.countEquipableSlot(i+1) > 1){
+                    //         hasTwoList[i] = true;
+                    //     }
+                    // }
+                    // var hasTwo = false;
+                    // if(hasTwoList.some(value => value == true)) hasTwo = true;
+                    // var evt = trigger.getl(player),
+                    // origins = evt.cards2.map(function (i) {
+                    //     return get.subtype(i, evt.hs.includes(i) ? player : false);
+                    // });
+                    // if(hasTwo){
+                    //     for (var i = 1; i < 6; i++){
+                    //         // game.print(player.storage.dhs_xiaojiniangniang);
+                    //         //game.print(`equip${i.toString()}`);
+                    //         //game.print(hasTwoList[i-1]);
+                    //         //game.print(player.countEmptySlot(i));
+                    //         //game.print(origins);
+                    //         if (origins.includes(`equip${i.toString()}`)
+                    //             && hasTwoList[i-1] == true && player.countEmptySlot(i) >= 1){
+                    //             player.disableEquip(i);
+                    //         }
+                    //     }
+                    // }
+                    await player.draw();
+                },
+                ai: {
+                    noe: true,
+                    reverseEquip: true,
+                    effect: {
+                        target: function(card, player, target, current) {
+                            if (get.type(card) == "equip" && !get.cardtag(card, "gifts")) return [1, 3];
+                        },
+                    },
+                },
+                sub: true,
+                sourceSkill: "dhs_xiaojiniangniang",
+            },
+            start: { //游戏开始时，你选择两个装备类别（可以是同一种）并获得相对应的额外装备栏。
+                audio: "ext:鸭子扩展/audio/skill:2",
+                trigger: {
+                    global: 'phaseBefore',
+                    player: 'enterGame',
+                },
+                forced: true,
+                filter: function(event, player) {
+                    return event.name != "phase" || game.phaseNumber == 0;
+                },
+                filterx: function(event, player){
+        //             var info = get.info(event.card);
+        // if (info.allowMultiple == false) return false;
+        // if (event.targets && !info.multitarget) {
+        //     if (
+        //         game.hasPlayer(function (current) {
+        //             return lib.filter.targetEnabled2(event.card, player, current) && !event.targets.includes(current);
+        //         })
+        //     ) {
+        //         return true;
+        //     }
+        // }
+        // return false;
+                    return true;
+                },
+                content: async function(event, trigger, player){ //xinbenxi
+                    var list = ['武器','防具','防御马','进攻马','宝物'];
+                    for (var i = 0; i < list.length; i++) {
+                        list[i] = [i, list[i]];
+                    }
+                    let result = await player.chooseButton(["枭姬娘娘：请选择一至两项", [list.slice(0, 2), "tdnodes"], [list.slice(2, 5), 'tdnodes']])
+                    .set("forced", true)
+                    .set("selectButton", [1, 2])
+                    .set("filterButton", function (button){
+                        if (button.link == 0) {
+                            return _status.event.bool1;
+                        }
+                        return true;
+                    })
+                    .set("bool1", lib.skill.dhs_xiaojiniangniang_start.filterx(trigger, player))
+                    .set("ai", function (button) {
+                        var player = _status.event.player;
+                        var taoCan = ['武器大师', '乌龟壳', '人造蔡乐只因', '平衡', '随机', '狗卡之梦', '平衡', '武器大师', '乌龟壳', '平衡', '武器大师', '武器大师'];
+                        switch(taoCan.randomGet()){
+                            case '武器大师': {
+                                switch(button.link){
+                                    case 0: {
+                                        return 1;
+                                    }
+                                    case 1: {
+                                        return 0;
+                                    }
+                                    case 2: {
+                                        return 0;
+                                    }
+                                    case 3: {
+                                        return 0;
+                                    }
+                                    case 4: {
+                                        return 0;
+                                    }
+                                }
+                            }
+                            case "乌龟壳": {
+                                switch(button.link){
+                                    case 0: {
+                                        return 0;
+                                    }
+                                    case 1: {
+                                        return 1;
+                                    }
+                                    case 2: {
+                                        return 0;
+                                    }
+                                    case 3: {
+                                        return 0;
+                                    }
+                                    case 4: {
+                                        return 0;
+                                    }
+                                }
+                            }
+                            case "人造蔡乐只因": {
+                                switch(button.link){
+                                    case 0: {
+                                        return 0;
+                                    }
+                                    case 1: {
+                                        return 0;
+                                    }
+                                    case 2: {
+                                        return 1;
+                                    }
+                                    case 3: {
+                                        return 0;
+                                    }
+                                    case 4: {
+                                        return 0;
+                                    }
+                                }
+                            }
+                            case "平衡": {
+                                switch(button.link){
+                                    case 0: {
+                                        return 0.9 + Math.random();
+                                    }
+                                    case 1: {
+                                        return 0.9 + Math.random();
+                                    }
+                                    case 2: {
+                                        return 0 + Math.random();
+                                    }
+                                    case 3: {
+                                        return 0 + Math.random();
+                                    }
+                                    case 4: {
+                                        return 0 + Math.random();
+                                    }
+                                }
+                            }
+                            case "随机": {
+                                switch(button.link){
+                                    case 0: {
+                                        return 0.5 + Math.random();
+                                    }
+                                    case 1: {
+                                        return 0.3 + Math.random();
+                                    }
+                                    case 2: {
+                                        return 0.2 + Math.random();
+                                    }
+                                    case 3: {
+                                        return Math.random();
+                                    }
+                                    case 4: {
+                                        return Math.random();
+                                    }
+                                }
+                            }
+                            case "狗卡之梦": {
+                                switch(button.link){
+                                    case 0: {
+                                        return 0;
+                                    }
+                                    case 1: {
+                                        return 0;
+                                    }
+                                    case 2: {
+                                        return 1;
+                                    }
+                                    case 3: {
+                                        return 1;
+                                    }
+                                    case 4: {
+                                        return 0;
+                                    }
+                                }
+                            }
+                        }
+                    }).forResult();
+                    var map = [
+                        function (trigger, player, event) {
+                            player.expandEquip(1);
+                        },
+                        function (trigger, player, event) {
+                            player.expandEquip(2);
+                        },
+                        function (trigger, player, event) {
+                            player.expandEquip(3);
+                        },
+                        function (trigger, player, event) {
+                            player.expandEquip(4);
+                        },
+                        function (trigger, player, event) {
+                            player.expandEquip(5);
+                        },
+                    ];
+                    game.print(result.links);
+                    for (var i = 0; i < result.links.length; i++) {
+                        game.log(player, "选择了", "#g【枭姬娘娘】", "的", "#y选项" + get.cnNumber(result.links[i] + 1, true));
+                        map[result.links[i]](trigger, player, event);
+                        if (result.links.length == 1) {
+                            map[result.links[i]](trigger, player, event);
+                        }
+                    }
+                    if (!result.links.includes(0)) event.finish();
+                },
+                sub: true,
+                sourceSkill: 'dhs_xiaojiniangniang',
+            },
+        },
+    },
+    "dhs_daojianqingyuan": { //刀剑情缘：每回合限一次。出牌阶段，你可以选择一名男性角色并弃置一张牌。你与其各回复1点体力，若有角色已经满体力，其从牌堆中获得一张装备牌。
+        enable:  'phaseUse',
+        filterCard: true,
+        usable: 1,
+        position: 'he',
+        filter: function(event, player){
+            return player.countCards("he") > 0;
+        },
+        check: function(card){
+            var player = _status.event.player;
+            if (get.position(card) == "e") {
+                var subtype = get.subtype(card);
+                if (
+                    !game.hasPlayer(function (current) {
+                        return current != player && get.attitude(player, current) > 0;
+                    })
+                ) {
+                    return 0;
+                }
+                return true;
+            } else {
+                if (player.countCards("h", { type: "equip" })) return 0;
+                return true;
+            }
+        },
+        filterTarget: function (card, player, target){
+            if (!target.hasSex("male")) return false;
+            var card = ui.selected.cards[0];
+            if (!card) return false;
+            return true;
+        },
+        discard: false,
+        delay: false,
+        lose: false,
+        content: async function (event, trigger, player){
+            await player.discard(ui.selected.cards[0]);
+            let target = event.target;
+            if (player.hp < player.maxHp){
+                if (target.hp < target.maxHp){
+                    await target.recover();
+                }else {
+                    let card = get.cardPile2(card => get.type(card, null, false) == "equip");
+                    if (card) await target.gain(card, 'gain2');
+                }
+                await player.recover();
+            }else{
+                if (target.hp < target.maxHp){
+                    await target.recover();
+                }else {
+                    let card = get.cardPile2(card => get.type(card, null, false) == "equip");
+                    if (card) await target.gain(card, 'gain2');
+                }
+                let card2 = get.cardPile2(card => get.type(card, null, false) == "equip");
+                    if (card2) await player.gain(card2, 'gain2');
+            }
+        },
+        ai: {
+            threaten: 1.2,
+            expose: 0.1,
+            order(item, player) {
+                return 4;
+            },
+            result: {
+                player(player, target) {
+                    if (!ui.selected.cards.length) return 0;
+                    let card = ui.selected.cards[0];
+                    if (get.position(card) == 'e') return 1.5;
+                    if (player.isDamaged()) return 1.5;
+                    return 1;
+                },
+                target(player, target) {
+                    if (!ui.selected.cards.length) return 0;
+                    let card = ui.selected.cards[0];
+                    if (get.position(card) == 'e') return 1.5;
+                    if (target.isDamaged()) return 1.5;
+                    return 1;
                 },
             },
         },
