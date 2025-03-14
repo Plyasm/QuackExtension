@@ -1663,6 +1663,7 @@ const skills = {
         },
     },
     "dhs_daojianqingyuan": { //刀剑情缘：每回合限一次。出牌阶段，你可以选择一名男性角色并弃置一张牌。你与其各回复1点体力，若有角色已经满体力，其从牌堆中获得一张装备牌。
+        audio: "ext:鸭子扩展/audio/skill:2",
         enable:  'phaseUse',
         filterCard: true,
         usable: 1,
