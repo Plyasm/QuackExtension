@@ -1398,13 +1398,6 @@ const skills = {
             // })
             await player.draw();
         },
-        ai: {
-            effect: {
-                target: function(card, player, target, current) {
-                    if (get.type(card) == "equip" && !get.cardtag(card, "gifts")) return [1, 3];
-                },
-            },
-        },
         group: ['dhs_xiaojiniangniang_lose', 'dhs_xiaojiniangniang_start'],
         subSkill: {
             lose: {
@@ -1497,6 +1490,9 @@ const skills = {
                 },
                 content: async function(event, trigger, player){ //xinbenxi
                     var list = ['武器','防具','防御马','进攻马','宝物'];
+                    var taoCan = ['武器大师', '乌龟壳', '人造蔡乐只因', '平衡', '随机', '狗卡之梦', '平衡', '武器大师', '乌龟壳', '平衡', '武器大师', '武器大师'];
+                    let curtaoCan = taoCan.randomGet();
+                    //game.print(curtaoCan);
                     for (var i = 0; i < list.length; i++) {
                         list[i] = [i, list[i]];
                     }
@@ -1511,119 +1507,135 @@ const skills = {
                     })
                     .set("bool1", lib.skill.dhs_xiaojiniangniang_start.filterx(trigger, player))
                     .set("ai", function (button) {
-                        var player = _status.event.player;
-                        var taoCan = ['武器大师', '乌龟壳', '人造蔡乐只因', '平衡', '随机', '狗卡之梦', '平衡', '武器大师', '乌龟壳', '平衡', '武器大师', '武器大师'];
-                        switch(taoCan.randomGet()){
-                            case '武器大师': {
-                                switch(button.link){
-                                    case 0: {
+                        // var player = _status.event.player;
+                        // var event = _status.event.getTrigger();
+                        // switch(button.link){
+                        //     case 0:{
+
+                        //     }
+                        //     case 1:{
+
+                        //     }
+                        //     case 2:{
+
+                        //     }
+                        //     case 3:{
+
+                        //     }
+                        //     case 4:{
+
+                        //     }
+                        // }
+                        // var taoCan = ['武器大师', '乌龟壳', '人造蔡乐只因', '平衡', '随机', '狗卡之梦', '平衡', '武器大师', '乌龟壳', '平衡', '武器大师', '武器大师'];
+                        // let curtaoCan = taoCan.randomGet();
+                        // game.print(curtaoCan);
+                        switch(button.link){
+                            case 0: {
+                                switch(curtaoCan){
+                                    case '武器大师': {
                                         return 1;
                                     }
-                                    case 1: {
+                                    case '乌龟壳': {
                                         return 0;
                                     }
-                                    case 2: {
+                                    case '人造蔡乐只因': {
                                         return 0;
                                     }
-                                    case 3: {
-                                        return 0;
-                                    }
-                                    case 4: {
-                                        return 0;
-                                    }
-                                }
-                            }
-                            case "乌龟壳": {
-                                switch(button.link){
-                                    case 0: {
-                                        return 0;
-                                    }
-                                    case 1: {
-                                        return 1;
-                                    }
-                                    case 2: {
-                                        return 0;
-                                    }
-                                    case 3: {
-                                        return 0;
-                                    }
-                                    case 4: {
-                                        return 0;
-                                    }
-                                }
-                            }
-                            case "人造蔡乐只因": {
-                                switch(button.link){
-                                    case 0: {
-                                        return 0;
-                                    }
-                                    case 1: {
-                                        return 0;
-                                    }
-                                    case 2: {
-                                        return 1;
-                                    }
-                                    case 3: {
-                                        return 0;
-                                    }
-                                    case 4: {
-                                        return 0;
-                                    }
-                                }
-                            }
-                            case "平衡": {
-                                switch(button.link){
-                                    case 0: {
+                                    case '平衡': {
                                         return 0.9 + Math.random();
                                     }
-                                    case 1: {
-                                        return 0.9 + Math.random();
-                                    }
-                                    case 2: {
-                                        return 0 + Math.random();
-                                    }
-                                    case 3: {
-                                        return 0 + Math.random();
-                                    }
-                                    case 4: {
-                                        return 0 + Math.random();
-                                    }
-                                }
-                            }
-                            case "随机": {
-                                switch(button.link){
-                                    case 0: {
+                                    case '随机': {
                                         return 0.5 + Math.random();
                                     }
-                                    case 1: {
-                                        return 0.3 + Math.random();
-                                    }
-                                    case 2: {
-                                        return 0.2 + Math.random();
-                                    }
-                                    case 3: {
-                                        return Math.random();
-                                    }
-                                    case 4: {
-                                        return Math.random();
+                                    case '狗卡之梦': {
+                                        return 0;
                                     }
                                 }
                             }
-                            case "狗卡之梦": {
-                                switch(button.link){
-                                    case 0: {
+                            case 1: {
+                                switch(curtaoCan){
+                                    case '武器大师': {
                                         return 0;
                                     }
-                                    case 1: {
+                                    case '乌龟壳': {
+                                        return 1;
+                                    }
+                                    case '人造蔡乐只因': {
                                         return 0;
                                     }
-                                    case 2: {
+                                    case '平衡': {
+                                        return 0.9 + Math.random();
+                                    }
+                                    case '随机': {
+                                        return 0.3 + Math.random();
+                                    }
+                                    case '狗卡之梦': {
+                                        return 0;
+                                    }
+                                }
+                            }
+                            case 2: {
+                                switch(curtaoCan){
+                                    case '武器大师': {
+                                        return 0;
+                                    }
+                                    case '乌龟壳': {
+                                        return 0;
+                                    }
+                                    case '人造蔡乐只因': {
                                         return 1;
                                     }
-                                    case 3: {
+                                    case '平衡': {
+                                        return Math.random();
+                                    }
+                                    case '随机': {
+                                        return 0.2 + Math.random();
+                                    }
+                                    case '狗卡之梦': {
                                         return 1;
                                     }
-                                    case 4: {
+                                }
+                            }
+                            case 3: {
+                                switch(curtaoCan){
+                                    case '武器大师': {
+                                        return 0;
+                                    }
+                                    case '乌龟壳': {
+                                        return 0;
+                                    }
+                                    case '人造蔡乐只因': {
+                                        return 0;
+                                    }
+                                    case '平衡': {
+                                        return Math.random();
+                                    }
+                                    case '随机': {
+                                        return Math.random();
+                                    }
+                                    case '狗卡之梦': {
+                                        return 1;
+                                    }
+                                }
+                            }
+                            case 4: {
+                                switch(curtaoCan){
+                                    case '武器大师': {
+                                        return 0;
+                                    }
+                                    case '乌龟壳': {
+                                        return 0;
+                                    }
+                                    case '人造蔡乐只因': {
+                                        return 0;
+                                    }
+                                    case '平衡': {
+                                        return Math.random();
+                                    }
+                                    case '随机': {
+                                        return Math.random();
+                                    }
+                                    case '狗卡之梦': {
                                         return 0;
                                     }
                                 }
@@ -1647,7 +1659,7 @@ const skills = {
                             player.expandEquip(5);
                         },
                     ];
-                    game.print(result.links);
+                    //game.print(result.links);
                     for (var i = 0; i < result.links.length; i++) {
                         game.log(player, "选择了", "#g【枭姬娘娘】", "的", "#y选项" + get.cnNumber(result.links[i] + 1, true));
                         map[result.links[i]](trigger, player, event);
@@ -1671,34 +1683,40 @@ const skills = {
         filter: function(event, player){
             return player.countCards("he") > 0;
         },
-        check: function(card){
+        check: function(card) {
             var player = _status.event.player;
+            //game.print(1);
             if (get.position(card) == "e") {
+                //game.print(2);
                 var subtype = get.subtype(card);
                 if (
                     !game.hasPlayer(function (current) {
+                        //game.print(3);
                         return current != player && get.attitude(player, current) > 0;
                     })
                 ) {
                     return 0;
                 }
-                return true;
+                //game.print(4);
+                if (player.countCards("h", { subtype: subtype })) return 20 - get.value(card);
+                return 10 - get.value(card);
             } else {
+                //game.print(5);
                 if (player.countCards("h", { type: "equip" })) return 0;
-                return true;
+                return 8 - get.value(card);
             }
         },
         filterTarget: function (card, player, target){
+            //game.print(6);
             if (!target.hasSex("male")) return false;
-            var card = ui.selected.cards[0];
-            if (!card) return false;
             return true;
         },
         discard: false,
         delay: false,
         lose: false,
         content: async function (event, trigger, player){
-            await player.discard(ui.selected.cards[0]);
+            //game.print(event.cards[0]);
+            await player.discard(event.cards[0]);
             let target = event.target;
             if (player.hp < player.maxHp){
                 if (target.hp < target.maxHp){
@@ -1723,22 +1741,32 @@ const skills = {
             threaten: 1.2,
             expose: 0.1,
             order(item, player) {
-                return 4;
+                //game.print(7);
+                return 7;
             },
             result: {
-                player(player, target) {
+                player: function(player, target) {
+                    //game.print(8);
                     if (!ui.selected.cards.length) return 0;
-                    let card = ui.selected.cards[0];
-                    if (get.position(card) == 'e') return 1.5;
-                    if (player.isDamaged()) return 1.5;
-                    return 1;
+                    let card = ui.selected.cards[0],
+                        val = -get.value(card, player) / 6;
+                    if (get.position(card) == "e") val += 2;
+                    if (player.hp == player.maxHp) val++;
+                    else if (player.isDamaged()) {
+                        val += get.recoverEffect(player, player, player) / get.attitude(player, player);
+                    }
+                    return val;
                 },
-                target(player, target) {
+                target: function(player, target) {
+                    //game.print(9);
                     if (!ui.selected.cards.length) return 0;
-                    let card = ui.selected.cards[0];
-                    if (get.position(card) == 'e') return 1.5;
-                    if (target.isDamaged()) return 1.5;
-                    return 1;
+                    let card = ui.selected.cards[0],
+                        val = 0;
+                    if (target.hp == target.maxHp) val++;
+                    else if (target.isDamaged()) {
+                        val += get.recoverEffect(target, target, target) / get.attitude(target, target);
+                    }
+                    return val;
                 },
             },
         },
