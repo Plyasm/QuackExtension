@@ -1,5 +1,5 @@
 const characterSort = {
-    yzkzdhs: ['dhs_xiaohe', 'dhs_zhangliao', 'dhs_lvbu', 'dhs_xiangyu', 'dhs_sunce', 'dhs_sunshangxiang', 'dhs_zuoci'],
+    yzkzdhs: ['dhs_xiaohe', 'dhs_zhangliao', 'dhs_lvbu', 'dhs_xiangyu', 'dhs_sunce', 'dhs_sunshangxiang', 'dhs_luxun', 'dhs_ganning', 'dhs_zuoci'],
     yzkzyjsk: ['quack_visha'],
 };
 

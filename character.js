@@ -7,6 +7,8 @@ const characters ={
     dhs_xiangyu: ['male', 'xichu', 6, ['dhs_bawang', 'dhs_pofuchenzhou'], ['ext:鸭子扩展/image/character/dhs_xiangyu.jpg', "die:ext:鸭子扩展/audio/die/dhs_xiangyu1.mp3", "die:ext:鸭子扩展/audio/die/dhs_xiangyu2.mp3"]],
     dhs_sunce:['male', 'wu', 6, ['dhs_hujvyingyang', 'dhs_xiaobawang'], ['ext:鸭子扩展/image/character/dhs_sunce.jpg', "die:ext:鸭子扩展/audio/die/dhs_sunce1.mp3", "die:ext:鸭子扩展/audio/die/dhs_sunce2.mp3"]],
     dhs_sunshangxiang: ['female', 'shu', 4, ['dhs_xiaojiniangniang', 'dhs_daojianqingyuan'], ['ext:鸭子扩展/image/character/dhs_sunshangxiang.jpg', "die:ext:鸭子扩展/audio/die/dhs_sunshangxiang1.mp3", "die:ext:鸭子扩展/audio/die/dhs_sunshangxiang2.mp3"]],
+    dhs_luxun: ['male', 'wu', 4, ['dhs_huoshaolianying', "dhs_jieyigongwu"], ['ext:鸭子扩展/image/character/dhs_luxun.jpg', "die:ext:鸭子扩展/audio/die/dhs_luxun1.mp3", "die:ext:鸭子扩展/audio/die/dhs_luxun2.mp3"]],
+    dhs_ganning: ['male', 'wu', 6, ['dhs_bairenyexi', 'dhs_jinfanyouxia'], ['ext:鸭子扩展/image/character/dhs_ganning.jpg', "die:ext:鸭子扩展/audio/die/dhs_ganning1.mp3", "die:ext:鸭子扩展/audio/die/dhs_ganning2.mp3"]],
 };
 
 export default characters;

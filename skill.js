@@ -725,6 +725,7 @@ const skills = {
     //     content: async function(event, trigger, player){},
     //     priority: 0,
     // },
+    //代号杀张辽
     "dhs_xiaoyaozhiti": { //逍遥止啼：你的回合开始时，你可以获得一名其他角色的一张手牌，并令其本回合内无法使用无懈可击。
         audio: "ext:鸭子扩展/audio/skill:2",
         trigger :{
@@ -901,6 +902,7 @@ const skills = {
         },
         priority: 5,
     },
+    //代号杀吕布
     'dhs_wenhouwushuang': { //温侯无双：锁定技。①当你获得锦囊牌后，将其转化为两张【杀】。②你的【杀】不可闪避。
         audio: "ext:鸭子扩展/audio/skill:2", //参考[mengye]梦,
         charlotte: true,
@@ -1123,6 +1125,7 @@ const skills = {
             },
         },
     },
+    //代号杀项羽
     "dhs_bawang": { //霸王：锁定技。①当你使用【决斗】时，或者当其他角色对你使用【决斗】时，此决斗的效果改为你对对方造成1点伤害。②当你累计造成了3次伤害时，你从游戏外获得一张【决斗】。
         audio: "ext:鸭子扩展/audio/skill:2",
         forced: true,
@@ -1273,6 +1276,7 @@ const skills = {
             threaten: 2,
         },
     },
+    //代号杀孙策
     "dhs_hujvyingyang": { //虎踞鹰扬：锁定技，摸牌阶段，你额外摸X张牌（X为你已损失的体力值）。
         audio: "ext:鸭子扩展/audio/skill:2",
         forced: true,
@@ -1354,6 +1358,7 @@ const skills = {
         }
 
     },
+    //代号杀孙尚香
     "dhs_xiaojiniangniang": { //枭姬娘娘：锁定技。①游戏开始时，你选择两个装备类别（可以是同一种）并获得相对应的额外装备栏。②当你使用装备牌后，你摸一张牌。③当你失去一张装备区内的牌后，你摸一张牌。
         audio: "ext:鸭子扩展/audio/skill:2",
         mod: {
@@ -1768,6 +1773,182 @@ const skills = {
                     }
                     return val;
                 },
+            },
+        },
+    },
+    //代号杀陆逊
+    "dhs_huoshaolianying": { //火烧连营： 每回合限一次。出牌阶段，你可以选择一名其他角色并交给其一张手牌，然后将其所有于此牌花色相同的牌移出游戏。若以此法移出了其至少三张牌，你对其造成1点火焰伤害。
+        //4血5上限
+        audio: "ext:鸭子扩展/audio/skill:2",
+        enable: "phaseUse",
+        usable: 1,
+        filterCard: true,
+        position: "h",
+        filter: function (event, player){
+            return player.countCards('h') > 0;
+        },
+        check: function (card){
+            return 8 - get.value(card);
+        },
+        filterTarget: function (card, player, target){
+            return target != player;
+        },
+        discard: false,
+        delay: false,
+        lose: false,
+        content: async function (event, trigger, player){
+            let target = event.target;
+            await player.give(event.cards[0], target);
+            await game.delay();
+            const cards = target.getCards("he", { suit: get.suit(event.cards[0])});
+            const lose_list = [];
+            target.$throw(cards);
+            lose_list.push([target, cards]);
+            await game
+            .loseAsync({
+                lose_list: lose_list,
+            })
+            .setContent("chooseToCompareLose");
+            await game.delay();
+            await game.cardsGotoSpecial(cards);
+            game.log(player, "将", target, "的", cards, "移出了游戏");
+            if (lose_list.length >= 3){
+                target.damage("fire");
+            }
+        },
+        ai: {
+            order: 9,
+            result: {
+                target: function(player, target) {
+                    return -target.countCards("he") - (player.countCards("h", "du") ? 1 : 0);
+                },
+            },
+            threaten: 2,
+        },
+    },
+    "dhs_jieyigongwu": { //解衣共舞： 锁定技，当你使用或打出手牌后，若你手牌数为全场最少，你摸一张牌。
+        audio: "ext:鸭子扩展/audio/skill:2",
+        trigger: {
+            player: ['useCardAfter', 'respondAfter'],
+        },
+        forced: true,
+        charlotte: true,
+        filter: function(event, player){
+            return player.isMinHandcard();
+        },
+        content: async function(event, trigger, player){
+            player.draw();
+        },
+        mod: {
+            maxHandcardBase: function(player, num) {
+                return 5;
+            },
+        },
+        ai: {
+            threaten: 0.8,
+            effect: {
+                "player_use": function(card, player, target) {
+                    if (player.isMinHandcard()) return [1, 0.8];
+                },
+                target: function(card, player, target) {
+                    if (get.tag(card, "loseCard") && target.isMinHandcard()) return 0.7;
+                },
+            },
+            noh: true,
+            skillTagFilter: function(player, tag) {
+                if (tag == "noh") {
+                    if (!player.isMinHandcard()) return false;
+                }
+            },
+        },
+    },
+    //代号杀周瑜
+    "dhs_xiongziyingfa": { //雄姿英发： 锁定技，你的回合开始时，你摸两张牌。
+        //4血5上限
+
+    },
+    "dhs_fanjianji": { //反间计： 每回合限一次。当你成为其他角色使用的锦囊牌的目标时，你可令此牌无效并令使用者收回此牌，然后若其本回合使用或打出此牌，其随机弃置两张牌并横置。
+
+    },
+    "dhs_huoshaochibi": { //火烧赤壁： 出牌阶段开始时，你依次亮出牌顶的至多两张牌，若此牌点数为5，你可以弃置所有红桃牌并对一名角色造成等量的火焰伤害，然后失去此技能。
+
+    },
+    //代号杀甘宁
+    "dhs_bairenyexi": { //百人夜袭： 当你获得黑桃牌后，你可以弃置一名其他角色区域里一张牌。
+        //6削3上限
+        audio: "ext:鸭子扩展/audio/skill:2",
+        trigger: {
+            player: 'gainAfter',
+        },
+        direct: true,
+        filter: function (event, player){
+            //game.print(event.cards);
+            // for (const card of event.cards){
+            //     game.print(get.suit(card))
+            // }
+            return (event.cards.some(card => get.suit(card) == "spade"));
+        },
+        check: function(event, player){
+            return game.hasPlayer(function (current){
+                get.attitude(player, current) < 0;
+            });
+        },
+        content: async function (event, trigger, player){
+            let result = await player.chooseTarget(get.prompt("dhs_bairenyexi"), "弃置一名其他角色区域里的一张牌", function(card, player, target) {
+                return target != player && target.countDiscardableCards(player, "hej");
+            }).set("ai", function (target){
+                var player = _status.event.player;
+                return get.effect(target, { name: "guohe" }, player, player);
+            }).forResult();
+            if (result.bool){
+                player.logSkill("dhs_bairenyexi", result.targets);
+                player.discardPlayerCard(result.targets[0], 'hej', true);
+            }
+        },
+        mod: {
+            maxHandcardBase: function(player, num) {
+                return 3;
+            },
+        },
+    },
+    "dhs_jinfanyouxia": { //锦帆游侠： 每回合限一次。出牌阶段，你可以将所有手牌花色转化为黑桃并随机置入牌堆，然后摸等量的牌。
+        audio: "ext:鸭子扩展/audio/skill:2",
+        enable: "phaseUse",
+        usable: 1,
+        delay: false,
+        filter: function(event, player) {
+            return player.countCards("h") > 0;
+        },
+        content: async function (event, trigger, player){
+            var hs = player.getCards('h');
+            //hs.forEach(function(card, index, theArray){
+                // let newCard = card.init(['spade', card.number, card.name, card.nature,]);
+                // if (card.hasGaintag()) newCard.gaintag.add(card.gaintag);
+                // if (card.cardtag != null) newCard.addCardtag(card.cardtag);
+                //card.$init(['spade', card.number, card.name, card.nature]);
+            for (var card of hs){
+                let info = get.cardInfo(card);
+                info[0] = 'spade',
+                card.init(info);
+                card.cardid = info[4],
+                card.$init(info);
+            }
+            await game.delay();
+            event.cards = hs;
+            // for (const newcard of event.cards){
+            //     game.print(get.suit(newcard))
+            // }
+            game.log(player, `将${get.cnNumber(hs.length)}张牌置入了牌堆`);
+            player.loseToDiscardpile(hs, ui.cardPile, "blank").set("log", false).insert_index = function () {
+                return ui.cardPile.childNodes[get.rand(0, ui.cardPile.childNodes.length - 1)];
+            };
+            await game.delay();
+            player.draw(hs.length);
+        },
+        ai: {
+            order: 5,
+            result: {
+                player: 1,
             },
         },
     },
