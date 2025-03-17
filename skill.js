@@ -1886,19 +1886,10 @@ const skills = {
         //6削3上限
         audio: "ext:鸭子扩展/audio/skill:2",
         trigger: {
-            global: 'phaseBefore',
-            player: ['enterGame', 'gainAfter'],
+            player: 'gainAfter',
         },
         direct: true,
         filter: function (event, player){
-            //game.print(event.cards);
-            // for (const card of event.cards){
-            //     game.print(get.suit(card))
-            // }
-            if (event.name != "phase" || game.phaseNumber == 0){
-                return (player.countCards("h", {suit: "spade"} ));
-            }
-            else if (event.name != 'gain') return false;
             return (event.cards.some(card => get.suit(card) == "spade"));
         },
         check: function(event, player){
@@ -1918,14 +1909,51 @@ const skills = {
                 player.discardPlayerCard(result.targets[0], 'hej', true);
             }
         },
-        mod: {
-            maxHandcardBase: function(player, num) {
-                return 3;
-            },
-        },
         ai: {
             threaten: 1.1,
             expose: 0.1,
+        },
+        group: 'dhs_bairenyexi_start',
+        subSkill: {
+            start: {
+                audio: ["dhs_bairenyexi", 2],
+                trigger: {
+                    global: 'phaseBefore',
+                    player: 'enterGame',
+                },
+                direct: true,
+                filter: function (event, player){
+                    return ((event.name != "phase" || game.phaseNumber == 0) && player.countCards("h", {suit: "spade"} ))
+                },
+                check: function(event, player){
+                    return game.hasPlayer(function (current){
+                        get.attitude(player, current) < 0;
+                    });
+                },
+                content: async function (event, trigger, player){
+                    let result = await player.chooseTarget(get.prompt("dhs_bairenyexi"), "弃置一名其他角色区域里的一张牌", function(card, player, target) {
+                        return target != player && target.countDiscardableCards(player, "hej");
+                    }).set("ai", function (target){
+                        var player = _status.event.player;
+                        return get.effect(target, { name: "guohe" }, player, player);
+                    }).forResult();
+                    if (result.bool){
+                        player.logSkill("dhs_bairenyexi", result.targets);
+                        player.discardPlayerCard(result.targets[0], 'hej', true);
+                    }
+                },
+                mod: {
+                    maxHandcardBase: function(player, num) {
+                        return 3;
+                    },
+                },
+                ai: {
+                    threaten: 1.1,
+                    expose: 0.1,
+                },
+                sub: true,
+                sourceSkill: "dhs_bairenyexi",
+            }
         }
     },
     "dhs_jinfanyouxia": { //锦帆游侠： 每回合限一次。出牌阶段，你可以将所有手牌花色转化为黑桃并随机置入牌堆，然后摸等量的牌。
