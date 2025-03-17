@@ -1798,12 +1798,16 @@ const skills = {
         lose: false,
         content: async function (event, trigger, player){
             let target = event.target;
+            let dealFire = false;
             await player.give(event.cards[0], target);
             await game.delay();
             const cards = target.getCards("he", { suit: get.suit(event.cards[0])});
             const lose_list = [];
             target.$throw(cards);
             lose_list.push([target, cards]);
+            if (lose_list[0][1].length >= 3){
+                dealFire = true;
+            }
             await game
             .loseAsync({
                 lose_list: lose_list,
@@ -1812,7 +1816,8 @@ const skills = {
             await game.delay();
             await game.cardsGotoSpecial(cards);
             game.log(player, "将", target, "的", cards, "移出了游戏");
-            if (lose_list.length >= 3){
+            await game.delay();
+            if (dealFire){
                 target.damage("fire");
             }
         },
@@ -1820,10 +1825,13 @@ const skills = {
             order: 9,
             result: {
                 target: function(player, target) {
+                    let card = ui.selected.cards[0];
+                    if (target.countCards("e", { suit: get.suit(card) })) return 2;
                     return -target.countCards("he") - (player.countCards("h", "du") ? 1 : 0);
                 },
             },
             threaten: 2,
+            expose: 0.2,
         },
     },
     "dhs_jieyigongwu": { //解衣共舞： 锁定技，当你使用或打出手牌后，若你手牌数为全场最少，你摸一张牌。
@@ -1878,7 +1886,8 @@ const skills = {
         //6削3上限
         audio: "ext:鸭子扩展/audio/skill:2",
         trigger: {
-            player: 'gainAfter',
+            global: 'phaseBefore',
+            player: ['enterGame', 'gainAfter'],
         },
         direct: true,
         filter: function (event, player){
@@ -1886,6 +1895,10 @@ const skills = {
             // for (const card of event.cards){
             //     game.print(get.suit(card))
             // }
+            if (event.name != "phase" || game.phaseNumber == 0){
+                return (player.countCards("h", {suit: "spade"} ));
+            }
+            else if (event.name != 'gain') return false;
             return (event.cards.some(card => get.suit(card) == "spade"));
         },
         check: function(event, player){
@@ -1910,6 +1923,10 @@ const skills = {
                 return 3;
             },
         },
+        ai: {
+            threaten: 1.1,
+            expose: 0.1,
+        }
     },
     "dhs_jinfanyouxia": { //锦帆游侠： 每回合限一次。出牌阶段，你可以将所有手牌花色转化为黑桃并随机置入牌堆，然后摸等量的牌。
         audio: "ext:鸭子扩展/audio/skill:2",
@@ -1950,6 +1967,7 @@ const skills = {
             result: {
                 player: 1,
             },
+            threaten: 1.2,
         },
     },
 };

@@ -317,7 +317,7 @@ game.import("extension", function(){
             author: "Plyasm",
             diskURL: "https://github.com/Plyasm/quackextension",
             forumURL: "",
-            version: "0.6",
+            version: "0.6b",
         },
         files: {
             "character": [],
