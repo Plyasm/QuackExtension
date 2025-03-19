@@ -502,7 +502,7 @@ const skills = {
             return false;
         },
         logTarget: async function(event, player){
-            let target = await player.chooseTarget("是否发动【掷杯戏曹】，为" + get.translation(this.trigger.card) + "增加一个虚拟目标？", (card, player, target) => {
+            let target = await player.chooseTarget("是否发动〖" + get.translation("dhs_zhibeixicao") +"〗，为" + get.translation(this.trigger.card) + "增加一个虚拟目标？", (card, player, target) => {
                 var evt = _status.event.getTrigger();
                 return !evt.targets.includes(target) && player.canUse(evt.card, target);
             })
@@ -631,7 +631,7 @@ const skills = {
         content: async function(event, trigger, player){
             event.cards = get.cards(2);
             await game.cardsGotoOrdering(event.cards);
-            await player.showCards(event.cards[0], "【飞升太虚】");
+            await player.showCards(event.cards[0], "〖" + get.translation("dhs_feishengtaixu") + "〗");
             //event.cards[0].number.toString()
             var difference = player.maxHp - event.cards[0].number;
             var differencecurrent = player.hp - event.cards[0].number;
@@ -648,7 +648,7 @@ const skills = {
                     await player.recover(-differencecurrent);
                 }
             }
-            await player.showCards(event.cards[1], "【飞升太虚】");
+            await player.showCards(event.cards[1], "〖" + get.translation("dhs_feishengtaixu") + "〗");
             //player.removeSkill("dhs_feishengtaixu2");
             player.storage.dhs_feishengtaixu = event.cards[1].number;
             //player.addSkill("dhs_feishengtaixu2");
@@ -673,7 +673,7 @@ const skills = {
                 content: async function(event, trigger, player){
                     var cards = get.cards(2);
                     await game.cardsGotoOrdering(cards);
-                    await player.showCards(cards[0], "【飞升太虚】");
+                    await player.showCards(cards[0], "〖" + get.translation("dhs_feishengtaixu") + "〗");
                     var difference = player.maxHp - cards[0].number;
                     var differencecurrent = player.hp - cards[0].number;
                     if (differencecurrent > 0){
@@ -689,7 +689,7 @@ const skills = {
                             await player.recover(-differencecurrent);
                         }
                     }
-                    await player.showCards(cards[1], "【飞升太虚】");
+                    await player.showCards(cards[1], "〖" + get.translation("dhs_feishengtaixu") + "〗");
                     //player.removeSkill("dhs_feishengtaixu2");
                     player.storage.dhs_feishengtaixu = cards[1].number;
                     //player.addSkill("dhs_feishengtaixu2");
@@ -747,7 +747,7 @@ const skills = {
             .forResult();
             if (result.bool){
                 player.line(result.targets[0], 'red');
-                game.log(player, '对', result.targets[0], "发动了", "【" + get.translation("dhs_xiaoyaozhiti") + "】");
+                game.log(player, '对', result.targets[0], "发动了", "〖" + get.translation("dhs_xiaoyaozhiti") + "〗");
                 await player.gainPlayerCard(1, 'h', result.targets[0]);
                 await game.delay();
                 result.targets[0].addTempSkill("dhs_xiaoyaozhitinowuxie", "phaseAfter");
@@ -818,7 +818,7 @@ const skills = {
         filter: function (event, player){return true;},
         content: async function (event, trigger, player){
             player.storage.dhs_bailangchihui = [];
-            let result = await player.chooseTarget(true, "选择一名角色，令其获得【🐺白狼】标记")
+            let result = await player.chooseTarget(true, "选择一名角色，令其获得〖白狼〗标记")
             .set('ai', target => {
                 var att = get.attitude(player, target);
                 if (att > 1) return 0.01;
@@ -831,7 +831,7 @@ const skills = {
             .forResult();
             if (result.bool){
                 player.line(result.targets[0], 'red');
-                game.log(player, '对', result.targets[0], "发动了", "【" + get.translation("dhs_bailangchihui") + "】");
+                game.log(player, '对', result.targets[0], "发动了", "〖" + get.translation("dhs_bailangchihui") + "〗");
                 result.targets[0].addSkill("dhs_bailangchihuimark");
                 player.storage.dhs_bailangchihui.push(result.targets[0]);
                 await game.delay();
@@ -1083,7 +1083,7 @@ const skills = {
             );
         },
         content: async function (event, trigger, player){
-            let prompt = "是否发动【辕门射戟】，打出一张【杀】，令此杀无效？";
+            let prompt = "是否发动〖" + get.translation("dhs_yuanmensheji") +"〗，打出一张【杀】，令此杀无效？";
             let result = await player.chooseToRespond(prompt, (card, player) => {
                return card.name == "sha";
             }).set("ai", card => {
@@ -1501,7 +1501,7 @@ const skills = {
                     for (var i = 0; i < list.length; i++) {
                         list[i] = [i, list[i]];
                     }
-                    let result = await player.chooseButton(["枭姬娘娘：请选择一至两项", [list.slice(0, 2), "tdnodes"], [list.slice(2, 5), 'tdnodes']])
+                    let result = await player.chooseButton([get.translation("dhs_xiaojiniangniang") + "：请选择一至两项", [list.slice(0, 2), "tdnodes"], [list.slice(2, 5), 'tdnodes']])
                     .set("forced", true)
                     .set("selectButton", [1, 2])
                     .set("filterButton", function (button){
@@ -1666,7 +1666,7 @@ const skills = {
                     ];
                     //game.print(result.links);
                     for (var i = 0; i < result.links.length; i++) {
-                        game.log(player, "选择了", "#g【枭姬娘娘】", "的", "#y选项" + get.cnNumber(result.links[i] + 1, true));
+                        game.log(player, "选择了", "#g〖" + get.translation("dhs_xiaojiniangniang") +"〗", "的", "#y选项" + get.cnNumber(result.links[i] + 1, true));
                         map[result.links[i]](trigger, player, event);
                         if (result.links.length == 1) {
                             map[result.links[i]](trigger, player, event);
@@ -1822,6 +1822,7 @@ const skills = {
             }
         },
         ai: {
+            fireAttack: true,
             order: 9,
             result: {
                 target: function(player, target) {
@@ -1873,13 +1874,278 @@ const skills = {
     //代号杀周瑜
     "dhs_xiongziyingfa": { //雄姿英发： 锁定技，你的回合开始时，你摸两张牌。
         //4血5上限
-
+        forced: true,
+        charlotte: true,
+        trigger: {
+            player: 'phaseBegin',
+        },
+        content: async function (event, trigger, player){
+            await player.draw(2);
+        },
+        ai: {
+            threaten: 2,
+        },
+        mod: {
+            maxHandcardBase: function(player, num) {
+                return 5;
+            },
+        },
     },
-    "dhs_fanjianji": { //反间计： 每回合限一次。当你成为其他角色使用的锦囊牌的目标时，你可令此牌无效并令使用者收回此牌，然后若其本回合使用或打出此牌，其随机弃置两张牌并横置。
-
+    "dhs_fanjianji": { //反间计： 每回合限一次。当你成为其他角色使用的锦囊牌的目标时，你可令此牌无效并令使用者收回此牌对应的所有实体牌，然后若其本回合再次使用或打出〖反间〗牌，其随机弃置两张牌并横置。
+        usable: 1,
+        direct: true,
+        trigger: {
+            target: 'useCardToTarget',
+        },
+        filter: function (event, player){
+            if (event.player == player) return false;
+            return get.type(event.card) == "trick" || get.type(event.card) == "delay";
+        },
+        content: async function (event, trigger, player){
+            let result = await player.chooseControl("令此牌无效", "取消")
+            .set("prompt", "是否发动〖" + get.translation("dhs_fanjianji") + "〗,令此牌无效且使用者收回此牌？")
+            .set("ai", () => {
+                if (get.attitude(player, trigger.player) > 0 && !get.tag(trigger.card, "damage")) return "取消";
+                let evt = event.getParent(),
+                    directHit = (evt.nowuxie && get.type(trigger.card, "trick") === "trick") || (evt.directHit && evt.directHit.includes(player)) || (evt.customArgs && evt.customArgs.default && evt.customArgs.default.directHit2);
+                if (get.tag(trigger.card, "respondSha")) {
+                    if (directHit || player.countCards("h", { name: "sha" }) === 0) return "令此牌无效";
+                } else if (get.tag(trigger.card, "respondShan")) {
+                    if (directHit || player.countCards("h", { name: "shan" }) === 0) return "令此牌无效";
+                } else if (get.tag(trigger.card, "damage")) {
+                    if (trigger.card.name === "huogong") return trigger.player.countCards("h") > 4 - player.hp - player.hujia ? "令此牌无效" : "取消";
+                    if (trigger.card.name === "shuiyanqijunx") return player.countCards("e") === 0 ? "令此牌无效" : "取消";
+                    if (get.attitude(player, trigger.player) > 1) return player.hp > 2 ? "取消" : "令此牌无效";
+                    return "令此牌无效" ;
+                }
+                if (trigger.card.name === "shunshou" || (trigger.card.name === "zhujinqiyuan" && (trigger.card.yingbian || get.distance(trigger.player, player) < 0))) return "令此牌无效";
+                return get.attitude(player, trigger.player) > 1 ? "取消" : "令此牌无效";
+            })
+            .forResult();
+            if (result.control === "令此牌无效"){
+                player.storage.dhs_fanjianji_used = true;
+                player.logSkill("dhs_fanjianji", trigger.player);
+                trigger.player.storage.dhs_fanjianjistun = trigger.card;
+                // game.print(trigger.card);
+                // game.print(trigger.player.storage.dhs_fanjianji);
+                trigger.player
+                .when({player:'useCardToBefore'})
+                .filter((event, player)=> {
+                    // game.print("检测中");
+                    // game.print(event.card);
+                    // game.print(player.storage.dhs_fanjianji);
+                    return event.card == player.storage.dhs_fanjianjistun;
+                })
+                .then(() => {
+                    // game.print("生效中");
+                    game.log(trigger.card, '对', trigger.targets, "失效");
+                    var evt = trigger.getParent();
+                    evt.excluded.addArray(evt.targets);
+                    trigger.cancel();
+                    game.delay();
+                })
+                .then(() => {
+                    //game.print((trigger.cards) && (trigger.cards.length));
+                    //game.print(trigger.cards.length.bool);
+                    if (trigger.cards && trigger.cards.length){
+                        //game.print("不是虚拟牌");
+                        var cards = trigger.cards.filterInD();
+                        game.log(trigger.player, "收回了", cards);
+                        trigger.player.gain(cards, 'gain2').gaintag.add("dhs_fanjianji");
+                        trigger.player.addTempSkill("dhs_fanjianjistun");
+                        trigger.player.storage.dhs_fanjianjistun = cards.slice(0);
+                    }
+                })
+            } else event.finish();
+        },
+        ai: {
+            expose: 0.1,
+            filterDamage: true,
+            skillTagFilter: (player, tag, arg) => {
+                if (!player.storage.dhs_fanjianji_used && arg.card && (get.type(arg.card) == 'trick' || get.type(arg.card) == "delay")) return true;
+                else return false;
+            },
+            effect: {
+                target: function(card, player, target) {
+                    if ((get.type(card) == 'trick' || get.type(card) == "delay") && get.attitude(target, player) < 0) return [1, -2];
+                },
+            },
+        },
+        derivation: 'dhs_fanjianjistun',
+        group: 'dhs_fanjianji_used',
+        subSkill: {
+            used: {
+                forced: true,
+                popup: false,
+                nopop: true,
+                trigger: {
+                    global: 'phaseEnd',
+                },
+                filter(event, player){
+                    return true;
+                },
+                async content(event, trigger, player){
+                    player.storage.dhs_fanjianji_used = false;
+                },
+                sub: true,
+                sourceSkill: "dhs_fanjianji",
+            }
+        }
     },
-    "dhs_huoshaochibi": { //火烧赤壁： 出牌阶段开始时，你依次亮出牌顶的至多两张牌，若此牌点数为5，你可以弃置所有红桃牌并对一名角色造成等量的火焰伤害，然后失去此技能。
-
+    "dhs_fanjianjistun": {
+        mark: true,
+        marktext: "反间",
+        intro: {
+            name: "反间计",
+            content: "已中反间计",
+            onunmark: function (storage, player){
+                delete player.storage.dhs_fanjianjistun;
+            },
+        },
+        sub: true,
+        sourceSkill: 'dhs_fanjianji',
+        forced: true,
+        onremove(player){
+            let markedCards = player.getCards("h", card => {return card.hasGaintag('dhs_fanjianji');})
+            for (const card of markedCards){
+                card.removeGaintag("dhs_fanjianji");
+            }
+        },
+        trigger: {
+            player: ['useCard', 'respond']
+        },
+        filter: function (event, player){
+            if (event.name == 'useCard'){
+                if (!player.storage.dhs_fanjianjistun || !event.cards || !event.cards.length) return false;
+                return event.cards.some(card => {
+                    return player.storage.dhs_fanjianjistun.includes(card);
+                });
+            }else{
+                if (!player.storage.dhs_fanjianjistun || !event.respondTo[1].cards || !event.respondTo[1].cards.length) return false;
+                return event.respondTo[1].cards.some(card => {
+                    return player.storage.dhs_fanjianjistun.includes(card);
+                });
+            }
+        },
+        content: async function (event, trigger, player){
+            await player.randomDiscard(2);
+            await player.link(true);
+        },
+        ai: {
+            neg: true,
+            effect: {
+                player (card, player, target){
+                    var discourage = 0;
+                    if (player.storage.dhs_fanjianjistun.includes(card)){
+                        discourage--;
+                        if (player.countCards("h") <= 3 || player.countCards("h") < player.hp) discourage--;
+                        if (player.countCards('he') == 1) discourage += 2;
+                        if (player.countCards('e') <= 1) discourage--;
+                        if (player.hp < 2) discourage--;
+                        if (player.hp == 1) discourage--;
+                        if (player.countCards('e') > 0 && player.hasSkillTag("noe")) discourage += 4;
+                        if (player.hasSkillTag("noh") && player.countCards('e') <= 1) discourage += 3;
+                        if (player.hasSkillTag("noLink")) discourage++;
+                        return [1, discourage];
+                    }
+                }
+            },
+        },
+    },
+    "dhs_huoshaochibi": { //火烧赤壁： 出牌阶段开始时，你依次亮出牌顶的至多两张牌，若此牌点数为5，你可以弃置所有红桃手牌并对一名角色造成等量的火焰伤害，然后失去此技能。
+        direct: true,
+        trigger: {
+            player: 'phaseUseBegin',
+        },
+        content: async function(event, trigger, player){
+            event.cards = get.cards(1);
+            await game.cardsGotoOrdering(event.cards);
+            await player.showCards(event.cards[0], "〖" + get.translation("dhs_huoshaochibi") + "〗");
+            const list = ["弃置红桃手牌", "取消"];
+            if (!player.countCards("h", { suit: 'heart'})) list.remove("弃置红桃手牌");
+            if (event.cards[0].number == 5){
+                let result = await player.chooseControl(list)
+                .set("prompt", "是否弃置所有红桃手牌并对一名角色造成等量的火焰伤害？")
+                .set("ai", () => {
+                    if (game.hasPlayer(function (current){
+                        return get.attitude(player, current) < -1 && current.hp <= player.countCards("h", { suit: 'heart'});
+                    })){
+                        return "弃置红桃手牌";
+                    }
+                    else return "取消";
+                })
+                .forResult();
+                if (result.control === "弃置红桃手牌"){
+                    var cards = player.getCards("h", { suit: "heart"});
+                    let cardNo = cards.length;
+                    await player.discard(cards);
+                    let target = await player.chooseTarget(true, get.prompt("dhs_huoshaochibi"), "对一名角色造成" + cardNo.toString() + "点伤害", function(card, player, target) {
+                        return true;
+                    }).set("ai", function (target){
+                        if (get.attitude(player, target) > -1) return 0;
+                        else {
+                            return target.maxHp - target.hp;
+                        }
+                    }).forResult();
+                    if (target.bool){
+                        player.logSkill("dhs_huoshaochibi", target.targets[0]);
+                        await target.targets[0].damage(cardNo, "fire");
+                        player.removeSkill('dhs_huoshaochibi');
+                    }
+                }
+            }
+            else{
+                event.cards = get.cards(1);
+                await game.cardsGotoOrdering(event.cards);
+                await player.showCards(event.cards[0], "〖" + get.translation("dhs_huoshaochibi") + "〗");
+                if (event.cards[0].number == 5){
+                    let result = await player.chooseControl(list)
+                    .set("prompt", "是否弃置所有红桃手牌并对一名角色造成等量的火焰伤害？")
+                    .set("ai", () => {
+                        if (game.hasPlayer(function (current){
+                            return get.attitude(player, current) < -1 && current.hp <= player.countCards("h", { suit: 'heart'});
+                        })){
+                            return "弃置红桃手牌";
+                        }
+                        else return "取消";
+                    })
+                    .forResult();
+                    if (result.control === "弃置红桃手牌"){
+                        var cards = player.getCards("h", { suit: "heart"});
+                        let cardNo = cards.length;
+                        await player.discard(cards);
+                        let target = await player.chooseTarget(true, get.prompt("dhs_huoshaochibi"), "对一名角色造成" + cardNo.toString() + "点伤害", function(card, player, target) {
+                            return true;
+                        }).set("ai", function (target){
+                            if (get.attitude(player, target) > -1) return 0;
+                        else {
+                            return target.maxHp - target.hp;
+                        }
+                        }).forResult();
+                        if (target.bool){
+                            player.logSkill("dhs_huoshaochibi", target.targets[0]);
+                            await target.targets[0].damage(cardNo + 1, "fire");
+                            player.removeSkill('dhs_huoshaochibi');
+                        }
+                    }
+                }else event.finish();
+            }
+        },
+        ai: {
+            expose: 0.2,
+            threaten: 1.5,
+            fireAttack: true,
+            value(card, player){
+                if (get.suit(card) == 'heart') return get.value(card) + 1;
+                return get.value(card);
+            },
+            result: {
+                target(player, target){
+                    if (target.hp <= 2) return -2;
+                    return -1;
+                },
+            },
+        },
     },
     //代号杀甘宁
     "dhs_bairenyexi": { //百人夜袭： 当你获得黑桃牌后，你可以弃置一名其他角色区域里一张牌。
@@ -1998,6 +2264,12 @@ const skills = {
             threaten: 1.2,
         },
     },
+    //英布
+    "dhs_gongguanzhuhou": { //
+
+    },
+    //虞姬
+    //吕雉
 };
 
 export default skills;
