@@ -313,6 +313,7 @@ const skills = {
         },
         sub: true,
         sourceSkill: 'dhs_chengye',
+        nopop: true,
         priority: 6,
     },
     "dhs_baiye": { //参考张邈的[mouni]谋逆
@@ -1258,6 +1259,7 @@ const skills = {
         charlotte: true,
         sub: true,
         sourceSkill: "dhs_pofuchenzhou",
+        nopop: true,
         content: async function (event, trigger, player){
             trigger.num+= player.countMark('dhs_pofuchenzhoubuff');
         },
@@ -1874,6 +1876,7 @@ const skills = {
     //代号杀周瑜
     "dhs_xiongziyingfa": { //雄姿英发： 锁定技，你的回合开始时，你摸两张牌。
         //4血5上限
+        audio: "ext:鸭子扩展/audio/skill:2",
         forced: true,
         charlotte: true,
         trigger: {
@@ -1892,6 +1895,7 @@ const skills = {
         },
     },
     "dhs_fanjianji": { //反间计： 每回合限一次。当你成为其他角色使用的锦囊牌的目标时，你可令此牌无效并令使用者收回此牌对应的所有实体牌，然后若其本回合再次使用或打出〖反间〗牌，其随机弃置两张牌并横置。
+        audio: "ext:鸭子扩展/audio/skill:2",
         usable: 1,
         direct: true,
         trigger: {
@@ -1993,6 +1997,7 @@ const skills = {
         }
     },
     "dhs_fanjianjistun": {
+        audio: "ext:鸭子扩展/audio/skill:2",
         mark: true,
         marktext: "反间",
         intro: {
@@ -2053,6 +2058,7 @@ const skills = {
         },
     },
     "dhs_huoshaochibi": { //火烧赤壁： 出牌阶段开始时，你依次亮出牌顶的至多两张牌，若此牌点数为5，你可以弃置所有红桃手牌并对一名角色造成等量的火焰伤害，然后失去此技能。
+        audio: "ext:鸭子扩展/audio/skill:2",
         direct: true,
         trigger: {
             player: 'phaseUseBegin',
@@ -2061,6 +2067,8 @@ const skills = {
             event.cards = get.cards(1);
             await game.cardsGotoOrdering(event.cards);
             await player.showCards(event.cards[0], "〖" + get.translation("dhs_huoshaochibi") + "〗");
+            game.playAudio("..", "extension", "鸭子扩展/audio/skill", "dhs_huoshaochibishow1");
+            await game.delay();
             const list = ["弃置红桃手牌", "取消"];
             if (!player.countCards("h", { suit: 'heart'})) list.remove("弃置红桃手牌");
             if (event.cards[0].number == 5){
@@ -2098,6 +2106,8 @@ const skills = {
                 event.cards = get.cards(1);
                 await game.cardsGotoOrdering(event.cards);
                 await player.showCards(event.cards[0], "〖" + get.translation("dhs_huoshaochibi") + "〗");
+                game.playAudio("..", "extension", "鸭子扩展/audio/skill", "dhs_huoshaochibishow2");
+                await game.delay();
                 if (event.cards[0].number == 5){
                     let result = await player.chooseControl(list)
                     .set("prompt", "是否弃置所有红桃手牌并对一名角色造成等量的火焰伤害？")
@@ -2128,7 +2138,11 @@ const skills = {
                             player.removeSkill('dhs_huoshaochibi');
                         }
                     }
-                }else event.finish();
+                }else {
+                    let audioNum = [1,2].randomGet();
+                    game.playAudio("..", "extension", "鸭子扩展/audio/skill", "dhs_huoshaochibifail" + audioNum.toString());
+                    event.finish()
+                };
             }
         },
         ai: {
@@ -2265,10 +2279,286 @@ const skills = {
         },
     },
     //英布
-    "dhs_gongguanzhuhou": { //
-
+    "dhs_gongguanzhuhou": { //功冠诸侯： 锁定技，每轮结束时，若你本轮造成的伤害值最高，你加1点体力上限，且你本局游戏内出牌阶段使用【杀】的次数上限+1。
+        audio: "ext:鸭子扩展/audio/skill:2",
+        trigger: {
+            global: "roundStart",
+        },
+        firstDo: true,
+        forced: true,
+        charlotte: true,
+        filter(event, player){
+            const players = lib.skill.dhs_gongguanzhuhou.getMostInfoLastRound();
+            //game.print(players);
+            return game.roundNumber != 1 && players.includes(player);
+        },
+        getMostInfoLastRound: function() {
+            let max = -1,
+                players = [];
+            for (const cur of game.players){
+                let curMax = 0;
+                cur.getRoundHistory('sourceDamage', function(evt){curMax += evt.num;}, 1);
+                game.print(curMax);
+                game.print(max);
+                if (curMax > max){
+                    max = curMax;
+                    players = [cur];
+                }
+                else if (curMax == max){
+                    players.push(cur);
+                }
+            }
+            game.print(players);
+            return players;
+        },
+        async content(event, trigger, player){
+            await player.gainMaxHp();
+            player.addSkill("dhs_gongguanzhuhoubuff");
+            player.addMark('dhs_gongguanzhuhoubuff', 1);
+        },
+        derivation: "dhs_gongguanzhuhoubuff",
     },
-    //虞姬
+    "dhs_gongguanzhuhoubuff": {
+        forced: true,
+        charlotte: true,
+        sub: true,
+        sourceSkill: "dhs_gongguanzhuhou",
+        mark: true,
+        marktext: "功",
+        nopop: true,
+        popup: false,
+        intro: {
+            name: "功",
+            content: "你出牌阶段使用【杀】的次数上限+#。",
+        },
+        mod: {
+            cardUsable: function(card,player, num){
+                if (card.name == 'sha') return num + player.countMark('dhs_gongguanzhuhoubuff');
+            }
+        },
+        ai: {
+            threaten: 1.2,
+        },
+    },
+    "dhs_daxiguowang": { //大喜过望： 锁定技，每轮游戏开始时，你将手牌摸至X张（X为全场手牌数最多角色的手牌数）。
+        audio: "ext:鸭子扩展/audio/skill:2",
+        forced: true,
+        charlotte: true,
+        trigger: {
+            global: 'roundStart',
+        },
+        filter(event, player){
+            return !player.isMaxHandcard();
+        },
+        async content(event, trigger, player){
+            var num = 0;
+            for (var i = 0; i < game.players.length; i++) {
+                if (game.players[i] != player) {
+                    num = Math.max(num, game.players[i].countCards("h"));
+                }
+            }
+            var dh = num - player.countCards("h");
+            if (dh > 0) {
+                player.draw(dh);
+            }
+        },
+        mod: {
+            maxHandcardBase: function(player, num) {
+                return 3;
+            },
+        },
+    },
+    //虞姬yuji  4血4上限
+    "dhs_meiren": { //美人： 锁定技。①游戏开始时，你选择一名男性角色。②当你受到伤害时，该角色将伤害转移给自己。③当该角色受到致命伤害时，防止此伤害且你失去等量的体力值，然后你令其回复1点体力。
+        //桥公，衰张角
+        audio: "ext:鸭子扩展/audio/skill:2",
+        direct: true,
+        forced: true,
+        charlotte: true,
+        trigger: {
+            global: 'phaseBefore',
+            player: 'enterGame',
+        },
+        filter(event, player){
+            return ((event.name != "phase" || game.phaseNumber == 0) && game.hasPlayer(function (cur){
+                return cur.hasSex("male");
+            }))
+        },
+        async content(event, trigger, player){
+            let result = await player.chooseTarget(true, get.prompt("dhs_meiren"), "选择一名男性角色", function (card, player, target){
+                return target != player && target.hasSex("male");
+            })
+            .set("ai", target => {
+                if (get.attitude(player, target) > 1) return 100;
+                else if (get.attitude(player, target) > 0) return 10;
+                else{
+                    return (target.hasSkillTag("maixie_defend") || target.hasSkillTag("maixie")) ? 5 : 1;
+                }
+            })
+            .forResult();
+            if (result.bool){
+                let target = result.targets[0];
+                player.storage.dhs_meiren = target;
+                player.logSkill("dhs_meiren", target);
+                target.storage.dhs_meiren = player;
+                target.addSkill("dhs_meirenhusband");
+                player.addSkill("dhs_meirenwife");
+            }
+        },
+        derivation: ["dhs_meirenhusband", "dhs_meirenwife"],
+    },
+    "dhs_meirenhusband": {
+        audio: "ext:鸭子扩展/audio/skill:2",
+        forced: true,
+        charlotte: true,
+        trigger: {
+            global: "damageBegin4",
+        },
+        filter(event, player){
+            return event.player == player.storage.dhs_meiren;
+        },
+        logTarget: "player",
+        async content(event, trigger, player){
+            trigger.cancel();
+            await player.damage(trigger.source ? trigger.source : "nosource", trigger.nature, trigger.num)
+            .set('card', trigger.card)
+            .set("cards", trigger.cards);
+            await game.delay();
+        },
+        ai: {
+            effect: {
+                player(card, player, target){
+                    if (target == player.storage.dhs_meiren && get.tag(card, "damage") && game.players.length > 2) return [1, -2];
+                },
+            }
+        },
+        mark: true,
+        marktext: "项郎",
+        intro: {
+            content: "锁定技，当〖虞娘〗受到伤害时，你将伤害转移给自己。",
+        },
+        nopop: true,
+        sub: true,
+        sourceSkill: "dhs_meiren",
+    },
+    "dhs_meirenwife": {
+        audio: "ext:鸭子扩展/audio/skill:2",
+        forced: true,
+        charlotte: true,
+        trigger: {
+            global: "damageBegin2",
+        },
+        filter(event, player){
+            return event.player == player.storage.dhs_meiren && event.player.hp + event.player.hujia <= event.num;
+        },
+        logTarget: "player",
+        async content(event, trigger, player){
+            trigger.cancel();
+            await player.loseHp(trigger.num);
+            await trigger.player.recover();
+            await game.delay();
+        },
+        ai: {
+            effect: {
+                player(card, player, target){
+                    if (target == player.storage.dhs_meiren && get.tag(card, "damage")) return [1, -4];
+                },
+            }
+        },
+        mark: true,
+        marktext: "虞娘",
+        intro: {
+            content: "锁定技，当〖项郎〗受到致命伤害时，防止此伤害且你失去等量的体力值，然后你令其回复1点体力。",
+        },
+        nopop: true,
+        sub: true,
+        sourceSkill: "dhs_meiren",
+    },
+    "dhs_bawangbieji": { //霸王别姬： 锁定技。①当其他角色执行杀死你的奖惩而摸牌或弃牌时，取消之。②当你死亡时，立即结束当前回合并令执行下一个回合的角色为你指定的一名男性角色。（跳过中间所有非该角色的其他角色回合）
+        //孟达，止息，冢虎
+        audio: "ext:鸭子扩展/audio/skill:2",
+        forced: true,
+        charlotte: true,
+        forceDie: true,
+        global: "dhs_bawangbieji_skip",
+        trigger: {
+            player: "die",
+        },
+        filter(event, player){
+            return game.hasPlayer(function (cur){
+                return cur.hasSex("male");
+            })
+        },
+        async content(event, trigger, player){
+            let result = await player.chooseTarget(true, get.prompt("dhs_bawangbieji"), "选择一名男性角色", function (card, player, target){
+                return target != player && target.hasSex("male");
+            })
+            .set("ai", target => {
+                if (get.attitude(player, target) > 1) return Math.max(100 * get.threaten(target), 100);
+                else if (get.attitude(player, target) > 0) return Math.max(10 * get.threaten(target), 10);
+                return [1, 2, 3, 4, 5].randomGet();
+            })
+            .forResult();
+            if (result.bool){
+                //game.print("选了人");
+                var evt = trigger.getParent("phaseUse");
+                if (evt && evt.name == "phaseUse") {
+                    evt.skipped = true;
+                }
+                var evt = trigger.getParent("phase");
+                if (evt && evt.name == "phase") {
+                    game.log(evt.player, "结束了回合");
+                    evt.finish();
+                    evt.untrigger(true);
+                }
+                _status._dhs_bawangbieji = result.targets[0]
+                result.targets[0].addTempSkill("dhs_bawangbieji_skip");
+            }
+        },
+        mod: {
+            maxHandcardBase: function(player, num) {
+                return 4;
+            },
+        },
+        group: ["dhs_bawangbieji_skip", "dhs_bawangbieji_nocalc"],
+        subSkill: {
+            skip: {
+                trigger: {
+                    global: "phaseBeforeStart",
+                },
+                forced: true,
+                priority: Infinity,
+                popup: false,
+                nopop: true,
+                firstDo: true,
+                filter(event, player) {
+                    if ((_status._dhs_bawangbieji && !_status._dhs_bawangbieji.isIn()) || event.player == _status._dhs_bawangbieji) delete _status._dhs_bawangbieji;
+                    return _status._dhs_bawangbieji && event.player != _status._dhs_bawangbieji;
+                },
+                async content(event, trigger, player){
+                    trigger.cancel(null, null, "notrigger");
+                },
+                sub: true,
+                sourceSkill: "dhs_bawangbieji",
+            },
+            nocalc: {
+                trigger: {
+                    global: ["discardBegin","drawBegin"],
+                },
+                forced: true,
+                forceDie: true,
+                logTarget: "player",
+                filter(event, player) {
+                    return event.getParent().name == "die" && event.getParent().source == event.player && event.player != player && event.getParent().player == player;
+                },
+                async content(event, trigger, player) {
+                    trigger.cancel();
+                },
+                sub: true,
+                sourceSkill: "dhs_bawangbieji",
+            },
+        },
+    },
     //吕雉
 };
 
