@@ -127,11 +127,11 @@ game.import("extension", function(){
                 },
                 list: [],
             },
-            intro: "一个闲鱼鸭子扩展，目前有很多代号杀武将和一两个私货。以后会增加更多。特别鸣谢：无名杀十周年样式群--无语，157，海边的ebao，在线求ol谋武将技能骨骼--无名杀频道--流年（无言），煩い煩い煩い--",
+            intro: "一个闲鱼鸭子扩展，目前有很多代号杀武将和一两个私货。以后会增加更多。特别鸣谢：无名杀十周年样式群--无语，157，海边的ebao，骗骗，u--无名杀频道--流年（无言），煩い煩い煩い--",
             author: "Plyasm",
             diskURL: "https://github.com/Plyasm/quackextension",
             forumURL: "",
-            version: "0.7",
+            version: "0.7b",
         },
         files: {
             "character": [],

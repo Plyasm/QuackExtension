@@ -85,6 +85,9 @@ const translates = {
     "dhs_meirenwife_info": "锁定技，当〖项郎〗受到致命伤害时，防止此伤害且你失去等量的体力值，然后你令其回复1点体力。",
     "dhs_bawangbieji": "别姬",
     "dhs_bawangbieji_info": "锁定技，当你死亡时，立即结束当前回合并令执行下一个回合的角色为你指定的一名男性角色。（跳过中间所有非该角色的其他角色回合）",
+    //吕雉
+    "dhs_linchaochengzhi": "称制",
+    "dhs_linchaochengzhi_info": '每名角色回合开始时，你可以选择一种花色并选择一项：令所有角色于本回合使用或打出此花色的牌后摸一张牌，或随机将一张牌移出游戏。',
 };
 
 export default translates;

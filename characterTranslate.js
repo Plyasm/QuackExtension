@@ -61,6 +61,11 @@ const translates = {
     "dhs_yuji_prefix": "代号杀",
     "#ext:鸭子扩展/audio/die/dhs_yuji1:die": "大王意气尽，贱妾何聊生！",
     "#ext:鸭子扩展/audio/die/dhs_yuji2:die": "这便是我的终曲吗？",
+    //吕雉
+    "dhs_lvzhi": '代号杀吕雉（测试中）',
+    "dhs_lvzhi_prefix": "代号杀",
+    "#ext:鸭子扩展/audio/die/dhs_lvzhi1:die": "大王意气尽，贱妾何聊生！",
+    "#ext:鸭子扩展/audio/die/dhs_lvzhi2:die": "这便是我的终曲吗？",
 };
 
 export default translates;

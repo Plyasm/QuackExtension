@@ -32,7 +32,6 @@ const skills = {
                     if (event.targets.length * 2 > player.countCards("he")) return false; //如果要弃的牌过多则不发动
                     return true;
                 },
-                skillAnimation: 'true',
                 prompt: '是否发动【严从】，弃置目标数张牌并视为对其中一名目标角色使用一张无视距离的【杀】？',
                 filter: function(event, player) {
                     if (!player.storage.ys_yancong_count) player.storage.ys_yancong_count = []; //初始化已发动过技能记录
@@ -182,7 +181,6 @@ const skills = {
                     global: "phaseEnd", //一名角色的回合结束时
                 },
                 forced: true,
-                skillAnimation: true,
                 filter: function(event, player) {
                     if (player.hasSkill("ys_qiangshi_round")) return false; //本轮没法动过强食
                     if (!(player.storage.qiangshi >= player.hp)) return false; //本回合弃置的牌数不少于你的体力值
@@ -315,6 +313,13 @@ const skills = {
         sourceSkill: 'dhs_chengye',
         nopop: true,
         priority: 6,
+        ai: {
+            effect: {
+                player(card, player, target){
+                    return [1,3];
+                }
+            },
+        },
     },
     "dhs_baiye": { //参考张邈的[mouni]谋逆
         //败也：限定技，其他角色出牌阶段结束时，若其在此阶段内使用过的牌数大于三张，你可以令一名除其以外的其他角色对其依次使用手牌中的所有【杀】，直到其进入濒死状态
@@ -330,7 +335,7 @@ const skills = {
         check: function(event, player){ //检查是否该发动技能
             var enemy = event.player,
             att = get.attitude(player, enemy);
-            game.print("萧何对" + enemy.name + "态度为： " + att.toString());
+            //game.print("萧何对" + enemy.name + "态度为： " + att.toString());
             if (att > 1) return false; //队友或不相干的人，不发动
             if (enemy.hasSkillTag("nodamage")) return false; //如果对方免疫伤害不发动
             if (enemy.hasSkillTag("filterDamage")) att *= 0.5 //如果对方有减伤，不倾向于发动
@@ -980,6 +985,13 @@ const skills = {
         },
         ai: {
             halfneg: true,
+            directHit_ai: true,
+            skillTagFilter: function(player, tag, arg){
+                if (tag === "directHit_ai"){
+                    if (arg && arg.card && (arg.card.name == 'sha')) return true;
+                    else return false;
+                }
+            },
             value (card, player){
                 if (get.type(card) == "equip" && (get.subtype(card) == "equip1") || get.subtype(card) == "equip4") return get.value(card) * 1.5;
                 return get.value(card);
@@ -1003,6 +1015,8 @@ const skills = {
             let target = await player.chooseTarget("选择一名其他角色，令其交给你两张牌或你可对其使用一张不计入出杀次数的【杀】", function (card, player, target){
                 return target != player && player.inRange(target) && target != trigger.player;
             }).set("ai", target => {
+                if (get.attitude(player, target) > 1 && (target.hasSkillTag("maixie") || target.hasSkillTag("nolose") || target.hasSkillTag('noh') ||
+                (target.hasSkillTag("noe") && target.countCards("e") > 0) || target.countCards("h" >= 4))) return get.attitude(player,target);
                 return 1 - get.attitude(player, target);
             }).forResult();
             if (target.bool){
@@ -1013,6 +1027,9 @@ const skills = {
                 .set("ai", (card) => {
                     if (skillTarget.hasSkillTag("nodamage")) return 0;
                     if (skillTarget.hasSkillTag("noe") && get.type(card) == "equip") return 11;
+                    if (skillTarget.hasSkillTag("nolose")) return 11;
+                    if (skillTarget.hasSkillTag("noh") && get.type(card) != "equip") return 11;
+                    if (get.attitude(skillTarget, player) > 1 && (get.type(card) == "equip" && (get.subtype(card) == "equip1") || get.subtype(card) == "equip4")) return 11;
                     if (skillTarget.hp == 1 && player.mayHaveSha(skillTarget)) return 11 - get.value(card);
                     if (skillTarget.hp > 2){
                         if (skillTarget.hasSkillTag("maixie_defend") || skillTarget.hasSkillTag("maixie")) return 0;
@@ -1132,21 +1149,24 @@ const skills = {
         forced: true,
         charlotte: true,
         trigger: {
-            target: "useCardToTargeted",
+            target: "useCardToBegin",
             player: "useCardToPlayered",
         },
         filter: function (event, player){
+            if (event.getParent().triggeredTargets3.length > 1 && event.name == "useCardToPlayered") return false;
             return event.card.name == "juedou";
         },
         content: async function (event, trigger, player){
             if (trigger.targets.includes(player)) {
-                trigger.player.damage();
+                player.line(trigger.player);
+                await trigger.player.damage();
                 trigger.getParent().excluded.add(player);
             }else {
                 for (const target of trigger.targets){
-                    target.damage();
+                    player.line(target);
+                    await target.damage();
                 }
-                trigger.excluded.addArray(trigger.targets);
+                trigger.getParent().excluded.addArray(trigger.targets);
             }
             await game.delay();
             trigger.cancel();
@@ -1171,7 +1191,7 @@ const skills = {
         group: 'dhs_bawang_count',
         subSkill: {
             count: {
-                audio: "ext:鸭子扩展/audio/skill:1",
+                popup: false,
                 init: function (player, skill){
                     player.storage.dhs_bawang_count = 0;
                 },
@@ -1185,6 +1205,7 @@ const skills = {
                 },
                 forced: true,
                 content: async function (event, trigger, player){
+                    game.playAudio("..", "extension", "鸭子扩展/audio/skill", "dhs_bawang_count1");
                     if (player.storage.dhs_bawang_count < 2) {
                         player.addMark("dhs_bawang_count");
                     } else {
@@ -1933,7 +1954,7 @@ const skills = {
                 // game.print(trigger.card);
                 // game.print(trigger.player.storage.dhs_fanjianji);
                 trigger.player
-                .when({player:'useCardToBefore'})
+                .when({player:'useCardToPlayered'})
                 .filter((event, player)=> {
                     // game.print("检测中");
                     // game.print(event.card);
@@ -1964,9 +1985,9 @@ const skills = {
         },
         ai: {
             expose: 0.1,
-            filterDamage: true,
+            notrick: true,
             skillTagFilter: (player, tag, arg) => {
-                if (!player.storage.dhs_fanjianji_used && arg.card && (get.type(arg.card) == 'trick' || get.type(arg.card) == "delay")) return true;
+                if (!player.storage.dhs_fanjianji_used && arg && (get.type(arg) == 'trick' || get.type(arg) == "delay")) return true;
                 else return false;
             },
             effect: {
@@ -2146,7 +2167,7 @@ const skills = {
             }
         },
         ai: {
-            expose: 0.2,
+            expose: 0.5,
             threaten: 1.5,
             fireAttack: true,
             value(card, player){
@@ -2298,8 +2319,8 @@ const skills = {
             for (const cur of game.players){
                 let curMax = 0;
                 cur.getRoundHistory('sourceDamage', function(evt){curMax += evt.num;}, 1);
-                game.print(curMax);
-                game.print(max);
+                //game.print(curMax);
+                //game.print(max);
                 if (curMax > max){
                     max = curMax;
                     players = [cur];
@@ -2308,7 +2329,7 @@ const skills = {
                     players.push(cur);
                 }
             }
-            game.print(players);
+            //game.print(players);
             return players;
         },
         async content(event, trigger, player){
@@ -2367,6 +2388,9 @@ const skills = {
                 return 3;
             },
         },
+        ai: {
+            threaten: 1.5,
+        },
     },
     //虞姬yuji  4血4上限
     "dhs_meiren": { //美人： 锁定技。①游戏开始时，你选择一名男性角色。②当你受到伤害时，该角色将伤害转移给自己。③当该角色受到致命伤害时，防止此伤害且你失去等量的体力值，然后你令其回复1点体力。
@@ -2404,6 +2428,9 @@ const skills = {
                 target.addSkill("dhs_meirenhusband");
                 player.addSkill("dhs_meirenwife");
             }
+        },
+        ai: {
+            expose: 0.2,
         },
         derivation: ["dhs_meirenhusband", "dhs_meirenwife"],
     },
@@ -2520,6 +2547,9 @@ const skills = {
                 return 4;
             },
         },
+        ai: {
+            threaten: 1.2,
+        },
         group: ["dhs_bawangbieji_skip", "dhs_bawangbieji_nocalc"],
         subSkill: {
             skip: {
@@ -2560,6 +2590,178 @@ const skills = {
         },
     },
     //吕雉
+    //4血4上限
+    "dhs_linchaochengzhi": { //临朝称制： 每名角色回合开始时，你可以选择一种花色并选择一项：令所有角色于本回合使用或打出此花色的牌后摸一张牌，或随机将一张牌移出游戏。
+        priority: 100,
+        trigger: {
+            global: "phaseBegin",
+        },
+        global: "dhs_linchaochengzhi_effect",
+        mapToSuit(suit){
+            switch(suit){
+                case "♠︎️" :{
+                    return "spade";
+                }
+                case "♥︎️": {
+                    return "heart";
+                }
+                case "♣︎️": {
+                    return "club";
+                }
+                case "♦︎": {
+                    return "diamond";
+                }
+            }
+        },
+        async content(event, trigger, player){
+            let result = await player.chooseButton([get.translation("dhs_linchaochengzhi") + "：选择一种花色与本回合的效果", [["♠︎️", "♥︎️", "♣︎️", "♦︎"], "tdnodes"], [["摸牌", "移出游戏"], "tdnodes"]])
+            .set("forced", true)
+            .set("selectButton", 2)
+            .set("filterButton", function (button, player){
+                if (!ui.selected.buttons.length) return true;
+                return ui.selected.buttons[0].parentNode != button.parentNode;
+            })
+            .set("ai", function (button) {
+            }).forResult();
+            if (result.bool){
+                let suit = lib.skill.dhs_linchaochengzhi.mapToSuit(result.links[0]),
+                globalEffect = result.links[1];
+                //game.print(suit);
+                game.log(player, "选择了", `#y${get.translation(suit)}`);
+                globalEffect == "摸牌" ? game.log(player, "选择了", `#y使用或打出该花色后摸牌`) : game.log(player, "选择了", `#y使用或打出该花色后随机将一张牌移出游戏`);
+                _status._dhs_linchaochengzhi = [suit, globalEffect];
+                player.addTempSkill("dhs_linchaochengzhimark", "phaseEnd");
+            }
+        },
+        //     check(button){
+        //     },
+        group: ["dhs_linchaochengzhi_effect", 'dhs_linchaochengzhi_reset'],
+        subSkill: {
+            effect: {
+                forced: true,
+                nopop: true,
+                trigger: {
+                    player: ['useCardAfter', 'respondAfter']
+                },
+                filter(event, player){
+                    return _status._dhs_linchaochengzhi && get.suit(event.card) == _status._dhs_linchaochengzhi[0];
+                },
+                async content(event, trigger, player){
+                    if (_status._dhs_linchaochengzhi[1] == "摸牌"){
+                        await player.draw();
+                    }
+                    else {
+                        let card = player.getCards("he").randomGet();
+                        const lose_list = [];
+                        player.$throw(card);
+                        lose_list.push([player, card]);
+                        await game
+                        .loseAsync({
+                            lose_list: lose_list,
+                        })
+                        .setContent("chooseToCompareLose");
+                        await game.delay();
+                        await game.cardsGotoSpecial(card);
+                        game.log(player, "将", card, "移出了游戏");
+                        await game.delay();
+                    }
+                },
+                sub: true,
+                sourceSkill: 'dhs_linchaochengzhi',
+                ai: {
+                    effect: {
+                        player (card, player, target){
+                            if (_status._dhs_linchaochengzhi && get.suit(card) == _status._dhs_linchaochengzhi[0] && _status._dhs_linchaochengzhi[1] == "移出游戏" && player.countCards("he", card => {return card.name != "du";}) >= 1) return [1, -3];
+                            else if (_status._dhs_linchaochengzhi && get.suit(card) == _status._dhs_linchaochengzhi[0] && _status._dhs_linchaochengzhi[1] == "摸牌") return [1, 3];
+                        },
+                    },
+                },
+            },
+            reset: {
+                forced: true,
+                nopop: true,
+                popup: false,
+                trigger: {
+                    global: "phaseEnd",
+                },
+                filter(event, player){
+                    return  _status._dhs_linchaochengzhi;
+                },
+                async content(event, trigger, player){
+                    game.print("发动啦");
+                    delete _status._dhs_bawangbieji;
+                    player.removeMark("dhs_linchaochengzhimark");
+                },
+                sub: true,
+                sourceSkill: 'dhs_linchaochengzhi',
+                priority: 0,
+            },
+        },
+    },
+    "dhs_linchaochengzhimark": {
+        mark: true,
+        marktext: "临朝",
+        onremove: true,
+        intro: {
+            name: "临朝称制",
+            content(storage, player){
+                let str = "本回合所有角色使用或打出";
+                switch(_status._dhs_linchaochengzhi[0]){
+                    case "spade": {
+                        str += "黑桃牌";
+                        break;
+                    }
+                    case "heart": {
+                        str += "红桃牌";
+                        break;
+                    }
+                    case "club": {
+                        str += "梅花牌";
+                        break;
+                    }
+                    case "diamond": {
+                        str += "方块牌";
+                        break;
+                    }
+                }
+                str += "后会";
+                switch(_status._dhs_linchaochengzhi[1]){
+                    case "摸牌": {
+                        str += "摸一张牌";
+                        break;
+                    }
+                    case "移出游戏": {
+                        str += "随机将一张牌移出游戏";
+                        break;
+                    }
+                }
+                return str;
+            },
+        },
+        sub: true,
+        sourceSkill: "dhs_linchaochengzhi",
+    },
+    "dhs_zhulvweiwang": { //诸吕为王： 限定技，你选择至少三名角色（若不足则全选择），令他们随机平分所有本局游戏中被移出游戏的牌。
+        //谋司马懿（没错又是他），
+        enable: "phaseUse",
+        selectTarget: [Math.min(3, game.players.length), game.players.length],
+        filter(event, player){
+            return ui.special.cards.length > 0;
+        },
+        limited: true,
+        check(){
+
+        },
+        selectTargetAi: (event, player) => {
+
+        },
+        multiline: true,
+        async content(event, trigger, player){
+            const { targets, target } = event;
+            const cards = ui.special.cards.slice().randomSort();
+            
+        },
+    },
 };
 
 export default skills;

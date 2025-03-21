@@ -101,6 +101,7 @@ const translates = {
     "#dhs_bawangbieji1": "此去经年，永矢弗谖。",
     "#dhs_bawangbieji2": "替我看看安稳盛世......",
     
+    //吕雉
 };
 
 export default translates;
